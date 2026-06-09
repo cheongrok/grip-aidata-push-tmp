@@ -1,0 +1,36 @@
+# 빌드 컨텍스트에서 제외 — 무겁거나(venv·node_modules) 비밀이거나(.env·.p8)
+# 런타임 마운트 대상(cache·artifacts)이거나 미추적 분석물(analysis·*.ipynb)
+.git
+.gitignore
+.dockerignore
+
+# python / node 환경
+**/__pycache__
+**/*.pyc
+.venv
+venv
+backend/.venv
+node_modules
+frontend/node_modules
+frontend/dist
+dist
+
+# 런타임 볼륨으로 마운트 (이미지에 굽지 않음)
+artifacts
+cache
+
+# 비밀 / 자격증명
+.env
+.env.*
+!.env.example
+*.p8
+*.pem
+*.key
+
+# 로컬 분석물 / 로그 / 에이전트 설정
+analysis
+*.ipynb
+.ipynb_checkpoints
+*.log
+jupyter.log
+.claude

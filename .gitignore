@@ -1,0 +1,35 @@
+# secrets / env (절대 커밋 금지)
+.env
+.env.*
+!.env.example
+
+# 키/인증 파일 (방어적 — 보통 ~/.snowflake 에 두지만 실수 대비)
+*.p8
+*.pem
+*.key
+
+# python / jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.DS_Store
+
+# 노트북 — 로컬 분석/조사용. GitHub 미추적(analysis/ 폴더에 보관)
+analysis/
+*.ipynb
+
+# 로컬 에이전트/IDE 설정
+.claude/
+
+# 로컬 데이터 캐시/아티팩트 — USER_SEQ/USER_ID 단위 데이터 포함, 커밋 금지
+cache/
+artifacts/
+jupyter.log
+
+# backend / frontend
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+*.log

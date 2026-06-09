@@ -1,0 +1,45 @@
+# grip-aidata-push — gpu2 배포용 compose.
+#   원칙: 이미지엔 코드만. 데이터/모델/비밀(artifacts·cache·.env·.p8)은 호스트 볼륨으로 마운트.
+#   포트: 8010(백엔드)·3001(프론트) — gpu2 의 기존 점유(8000/3000/8080/8888 등)와 충돌 회피.
+#
+# 사전 준비(호스트 gpu2):
+#   1) .env.example → .env 복사 후 Snowflake 값 채우기
+#   2) Snowflake 개인키(.p8, 무암호 PKCS#8)를 호스트에 두기 (기본 ~/.snowflake/snowflake.p8)
+#      다른 경로면 SNOWFLAKE_KEY_HOST_PATH 환경변수로 지정
+#   3) artifacts/ (모델), cache/ (스냅샷·매핑) 가 repo 루트에 존재해야 함
+#
+# 기동:  docker compose build && docker compose up -d
+# 접속:  http://<gpu2-host>:3001/   (API docs: http://<gpu2-host>:8010/docs)
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: grip-aidata-push-backend
+    env_file: .env
+    environment:
+      # 컨테이너 내부 개인키 위치 (아래 볼륨으로 마운트)
+      SNOWFLAKE_PRIVATE_KEY_PATH: /app/.snowflake/snowflake.p8
+    volumes:
+      # 모델 아티팩트 / 데이터 캐시 — 호스트(gpu2)에 이미 존재, 컨테이너로 마운트
+      - ./artifacts:/app/artifacts
+      - ./cache:/app/cache
+      # Snowflake 개인키 — repo/이미지에 없음. 호스트 키를 읽기전용으로 마운트
+      - ${SNOWFLAKE_KEY_HOST_PATH:-${HOME}/.snowflake/snowflake.p8}:/app/.snowflake/snowflake.p8:ro
+      # .env 도 마운트 (core 의 load_dotenv 가 /app/.env 를 읽음 — env_file 과 동일 값)
+      - ./.env:/app/.env:ro
+    ports:
+      - "8010:8010"     # /docs·직접 디버그용 (외부 노출 원치 않으면 이 줄 주석)
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: grip-aidata-push-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3001:3001"     # 대시보드 접속 + /api → backend 프록시 (nginx)
+    restart: unless-stopped
