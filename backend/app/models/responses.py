@@ -1,4 +1,4 @@
-"""API 응답 모델 — frontend/src/types/push.ts 와 동기화."""
+"""API 요청/응답 모델 — frontend/src/types/push.ts 와 동기화 (요청: DiscoverReq·ContentMapReq·AllocationReq·ABVerifyReq)."""
 
 from typing import Literal
 
@@ -191,6 +191,8 @@ class SegmentStats(BaseModel):
     n_purchase: int
     view_rate_pct: float      # n_view / n_open * 100 (유효시청률, 오픈자 기준)
     purchase_rate_pct: float  # n_purchase / n_open * 100 (거래전환율, 오픈자 기준)
+    gmv_sum: int = 0          # 전환 구매 GMV 합 (원). 옛 캐시 호환 위해 기본 0
+    aov: int = 0              # 객단가 = gmv_sum / n_purchase (구매자 1인당, 원)
 
 
 class SegmentClusterStats(SegmentStats):
@@ -222,6 +224,66 @@ class SegmentConversionRes(BaseModel):
     totals: SegmentStats
     by_cluster_total: list[SegmentClusterStats]
     pushes: list[SegmentPushRow]
+
+
+# ── 푸시알림 효과검증 (A/B 홀드아웃) ──
+class ABVerifyReq(BaseModel):
+    push_seq: int = Field(ge=1)
+    content_seqs: list[int]                 # 푸시가 홍보한 방송/상품 content_seq
+    days: int | None = Field(default=None, ge=1, le=60)  # 측정기간(발송시각+N일). None=현재까지
+    treatment_user_seqs: list[int]          # 발송군 (CSV USER_SEQ)
+    treatment_clusters: list[int] = []      # 발송군 CLUSTER (길이 같으면 세그먼트별 분해)
+    control_user_seqs: list[int]            # 대조군 (미발송)
+    control_clusters: list[int] = []
+
+
+class ABArm(BaseModel):
+    n_users: int
+    n_watch: int
+    n_purchase: int
+    gmv_sum: int
+    watch_rate_pct: float
+    purchase_rate_pct: float
+    gmv_per_user: int
+    aov: int
+
+
+class ABMetric(BaseModel):
+    treatment_pct: float
+    control_pct: float
+    lift_pp: float              # 증분 = 발송 − 대조 (%포인트)
+    z: float | None = None
+    p_value: float | None = None
+    significant: bool = False   # p < 0.05
+
+
+class ABClusterRow(BaseModel):
+    cluster: int
+    rank: int | None = None
+    short_name: str = ""
+    t_users: int
+    c_users: int
+    t_purchase_rate_pct: float
+    c_purchase_rate_pct: float
+    lift_pp: float
+    p_value: float | None = None
+
+
+class ABVerifyRes(BaseModel):
+    push_seq: int
+    push_at: str | None
+    content_seqs: list[int]
+    period_start: str
+    period_end: str
+    treatment: ABArm
+    control: ABArm
+    watch: ABMetric            # 유효시청전환 증분
+    purchase: ABMetric         # 구매전환 증분
+    gmv_per_user_treatment: int
+    gmv_per_user_control: int
+    gmv_per_user_lift: int
+    by_cluster: list[ABClusterRow]
+    warnings: list[str] = []
 
 
 # ── 공통 메타 ──

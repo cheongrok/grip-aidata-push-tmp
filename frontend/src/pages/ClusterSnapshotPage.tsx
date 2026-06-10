@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
+import SegmentShareChart from '../components/SegmentShareChart'
 import { useJobPolling } from '../hooks/useJobPolling'
-import { errorMessage, getSnapshot, startRefresh } from '../services/pushService'
-import type { SnapshotRes } from '../types/push'
+import {
+  errorMessage,
+  getSegmentConversion,
+  getSnapshot,
+  startRefresh,
+  startSegmentConversionRefresh,
+} from '../services/pushService'
+import type { SegmentConversionRes, SnapshotRes } from '../types/push'
 
 const TIER_STYLE: Record<string, string> = {
   Tier1: 'bg-emerald-100 text-emerald-700',
@@ -42,6 +49,34 @@ export default function ClusterSnapshotPage() {
   }
 
   const running = jobId !== null
+
+  // 세그먼트별 전환(오픈 점유 vs 구매 기여) — 클러스터 최신화와 별개로 자체 [집계 갱신] 버튼 사용
+  const [seg, setSeg] = useState<SegmentConversionRes | null>(null)
+  const [segError, setSegError] = useState('')
+  const [segJobId, setSegJobId] = useState<string | null>(null)
+
+  const loadSeg = useCallback(() => {
+    getSegmentConversion()
+      .then(setSeg)
+      .catch((e) => setSegError(errorMessage(e)))
+  }, [])
+  useEffect(loadSeg, [loadSeg])
+
+  const segJob = useJobPolling(segJobId, (j) => {
+    if (j.status === 'done') loadSeg()
+    setSegJobId(null)
+    if (j.status === 'error') setSegError(j.error ?? '집계 실패')
+  })
+  const refreshSeg = async () => {
+    setSegError('')
+    try {
+      const j = await startSegmentConversionRefresh()
+      setSegJobId(j.job_id)
+    } catch (e) {
+      setSegError(errorMessage(e))
+    }
+  }
+  const segRunning = segJobId !== null
 
   return (
     <div className="space-y-6">
@@ -169,6 +204,59 @@ export default function ClusterSnapshotPage() {
                 ))}
               </tbody>
             </table>
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="mb-3 flex items-end justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-600">세그먼트별 오픈 점유 vs 구매 기여</h3>
+                <p className="text-xs text-slate-400">
+                  실측 전환(수기 매핑 기준)으로 본 클러스터 등급 검증 — 상위가 구매를 만들고 하위는 오픈만 차지하는지.
+                  {seg && (
+                    <> · 집계 {seg.computed_at.replace('T', ' ').slice(0, 16)} · 스냅샷 기준 {seg.cluster_snapshot_at.slice(0, 16)}</>
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  onClick={refreshSeg}
+                  disabled={segRunning}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-40"
+                >
+                  {segRunning ? '집계 중…' : seg ? '집계 갱신' : '집계 실행'}
+                </button>
+                <p className="text-xs text-slate-400">수 분 소요 · 클러스터 최신화와 별개</p>
+              </div>
+            </div>
+
+            {segError && <p className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{segError}</p>}
+
+            {segRunning && (
+              <div className="mb-3 flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                <span className="h-3 w-3 animate-ping rounded-full bg-indigo-500" />
+                <div className="text-sm text-indigo-800">
+                  <b>{segJob?.stage ?? '시작 중…'}</b>
+                  <span className="ml-2 text-indigo-500">수 분 소요 — 페이지를 떠나도 작업은 계속됩니다</span>
+                </div>
+              </div>
+            )}
+
+            {seg && seg.cluster_snapshot_at.slice(0, 16) < snap.snapshot_at.slice(0, 16) && (
+              <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                ⚠ 이 차트는 이전 클러스터 스냅샷({seg.cluster_snapshot_at.slice(0, 16)}) 기준입니다. 현재
+                스냅샷({snap.snapshot_at.slice(0, 16)})에 맞추려면 <b>[집계 갱신]</b>을 누르세요.
+              </p>
+            )}
+
+            {seg ? (
+              <SegmentShareChart clusters={seg.by_cluster_total} overall={seg.totals} />
+            ) : (
+              !segRunning && (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                  아직 전환 집계가 없습니다. <b>[집계 실행]</b>을 눌러 계산하세요 (수 분 소요).
+                </div>
+              )
+            )}
           </section>
         </>
       )}

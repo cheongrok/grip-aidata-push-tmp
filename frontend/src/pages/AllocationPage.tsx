@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AbTestSection from '../components/AbTestSection'
 import { createAllocation, errorMessage, getMeta, getSnapshot } from '../services/pushService'
 import type { AllocationRes, ClusterCard, MetaRes, PushInput } from '../types/push'
 
@@ -379,6 +380,8 @@ export default function AllocationPage() {
           </section>
         </>
       )}
+
+      <AbTestSection />
     </div>
   )
 }

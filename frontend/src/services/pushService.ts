@@ -1,5 +1,7 @@
 import axios from 'axios'
 import type {
+  AbVerifyReq,
+  AbVerifyRes,
   AllocationRes,
   DiscoverRes,
   JobRes,
@@ -10,7 +12,7 @@ import type {
   SnapshotRes,
 } from '../types/push'
 
-// vite proxy: /api → http://localhost:8010 (dev)
+// /api 프록시 — dev: vite → env API_TARGET (기본 localhost:8000, systemd 운영 서비스는 8010) · 배포: nginx → backend:8010
 const api = axios.create({ baseURL: '', timeout: 60_000, headers: { 'Content-Type': 'application/json' } })
 
 export function errorMessage(e: unknown): string {
@@ -94,4 +96,8 @@ export async function getSegmentConversion(): Promise<SegmentConversionRes | nul
 
 export async function startSegmentConversionRefresh(): Promise<JobRes> {
   return (await api.post('/api/v1/push-results/segment-conversion/refresh')).data
+}
+
+export async function verifyAbTest(payload: AbVerifyReq): Promise<AbVerifyRes> {
+  return (await api.post('/api/v1/ab-test/verify', payload)).data
 }

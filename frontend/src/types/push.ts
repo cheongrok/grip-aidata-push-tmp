@@ -151,6 +151,8 @@ export interface SegmentStats {
   n_purchase: number
   view_rate_pct: number // n_view / n_open * 100 (유효시청률, 오픈자 기준)
   purchase_rate_pct: number // n_purchase / n_open * 100 (거래전환율, 오픈자 기준)
+  gmv_sum: number // 전환 구매 GMV 합 (원)
+  aov: number // 객단가 = gmv_sum / n_purchase (구매자 1인당, 원)
 }
 
 export interface SegmentClusterStats extends SegmentStats {
@@ -189,4 +191,64 @@ export interface MetaRes {
   hour_buckets: string[]
   may_order: number[]
   snapshot: { exists: boolean; snapshot_at: string | null; n_users: number | null; stale: boolean | null }
+}
+
+// 푸시알림 효과검증 (A/B 홀드아웃)
+export interface AbArm {
+  n_users: number
+  n_watch: number
+  n_purchase: number
+  gmv_sum: number
+  watch_rate_pct: number
+  purchase_rate_pct: number
+  gmv_per_user: number
+  aov: number
+}
+
+export interface AbMetric {
+  treatment_pct: number
+  control_pct: number
+  lift_pp: number // 증분 = 발송 − 대조 (%포인트)
+  z: number | null
+  p_value: number | null
+  significant: boolean // p < 0.05
+}
+
+export interface AbClusterRow {
+  cluster: number
+  rank: number | null
+  short_name: string
+  t_users: number
+  c_users: number
+  t_purchase_rate_pct: number
+  c_purchase_rate_pct: number
+  lift_pp: number
+  p_value: number | null
+}
+
+export interface AbVerifyReq {
+  push_seq: number
+  content_seqs: number[]
+  days: number | null // 측정기간(발송+N일). null=현재까지
+  treatment_user_seqs: number[]
+  treatment_clusters: number[]
+  control_user_seqs: number[]
+  control_clusters: number[]
+}
+
+export interface AbVerifyRes {
+  push_seq: number
+  push_at: string | null
+  content_seqs: number[]
+  period_start: string
+  period_end: string
+  treatment: AbArm
+  control: AbArm
+  watch: AbMetric
+  purchase: AbMetric
+  gmv_per_user_treatment: number
+  gmv_per_user_control: number
+  gmv_per_user_lift: number
+  by_cluster: AbClusterRow[]
+  warnings: string[]
 }

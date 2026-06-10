@@ -51,7 +51,10 @@ def _rate(n: int, n_open: int) -> float:
     return round(float(n) / n_open * 100, 2) if n_open else 0.0
 
 
-def _stats(n_open: int, n_view: int, n_purchase: int, n_sent: int = 0, n_reached: int = 0) -> dict:
+def _stats(
+    n_open: int, n_view: int, n_purchase: int,
+    n_sent: int = 0, n_reached: int = 0, gmv_sum: float = 0,
+) -> dict:
     return {
         "n_sent": int(n_sent),
         "n_reached": int(n_reached),
@@ -60,6 +63,8 @@ def _stats(n_open: int, n_view: int, n_purchase: int, n_sent: int = 0, n_reached
         "n_purchase": int(n_purchase),
         "view_rate_pct": _rate(n_view, n_open),
         "purchase_rate_pct": _rate(n_purchase, n_open),
+        "gmv_sum": int(round(gmv_sum)),  # 전환 구매 GMV 합 (원)
+        "aov": int(round(gmv_sum / n_purchase)) if n_purchase else 0,  # 객단가 = GMV합 / 구매자수 (1인당, 원)
     }
 
 
@@ -172,21 +177,23 @@ def _rowlevel_sql(pmap: dict[int, list[int]], push_at: dict[int, str]) -> str:
         JOIN   es_watch w ON w.user_seq = o.user_seq AND w.content_seq = pm.content_seq AND w.ts >= p.push_at
     ),
     ord_buy AS (
-        SELECT ord.user_seq, ord.content_seq, ord.ordered_at AS ts
+        SELECT ord.user_seq, ord.content_seq, ord.ordered_at AS ts, ord.gmv AS gmv
         FROM   default.order_all ord
         WHERE  ord.content_seq IN ({cs_list}) AND ord.cancel_at IS NULL AND ord.gmv > 0
           AND  ord.ordered_at >= TIMESTAMP '{min_pa}'
     ),
-    buy AS (
-        SELECT DISTINCT o.push_seq, o.user_seq
+    buy AS (   -- (push_seq, user_seq) 구매자별 1행 + 매핑 방송 전환구매 GMV 합 (구매자당 합산 → 객단가 분자)
+        SELECT o.push_seq, o.user_seq, SUM(b.gmv) AS gmv
         FROM   opens o
         JOIN   pmap pm   ON pm.push_seq = o.push_seq
         JOIN   pushes p  ON p.push_seq = o.push_seq
         JOIN   ord_buy b ON b.user_seq = o.user_seq AND b.content_seq = pm.content_seq AND b.ts >= p.push_at
+        GROUP BY o.push_seq, o.user_seq
     )
     SELECT o.push_seq, o.user_seq,
            IFF(w.user_seq IS NOT NULL, 1, 0) AS viewed,
-           IFF(b.user_seq IS NOT NULL, 1, 0) AS purchased
+           IFF(b.user_seq IS NOT NULL, 1, 0) AS purchased,
+           COALESCE(b.gmv, 0) AS gmv
     FROM   opens o
     LEFT JOIN watch w ON w.push_seq = o.push_seq AND w.user_seq = o.user_seq
     LEFT JOIN buy   b ON b.push_seq = o.push_seq AND b.user_seq = o.user_seq
@@ -241,21 +248,26 @@ def _cluster_block(g: pd.DataFrame, desc: dict, k: int, sent_s: pd.Series, reach
     rank·short_name 부여와 정렬은 read 시점 _rank_and_sort 가 한다.
     """
     if len(g):
-        agg = g.groupby("cluster").agg(n_open=("user_seq", "size"), n_view=("viewed", "sum"), n_purchase=("purchased", "sum"))
+        agg = g.groupby("cluster").agg(
+            n_open=("user_seq", "size"), n_view=("viewed", "sum"),
+            n_purchase=("purchased", "sum"), gmv_sum=("gmv", "sum"),
+        )
     else:
-        agg = pd.DataFrame(columns=["n_open", "n_view", "n_purchase"])
+        agg = pd.DataFrame(columns=["n_open", "n_view", "n_purchase", "gmv_sum"])
     rows = []
     for cid in list(range(k)) + [UNASSIGNED]:
         if cid in agg.index:
             r = agg.loc[cid]
             n_open, n_view, n_purchase = int(r["n_open"]), int(r["n_view"]), int(r["n_purchase"])
+            gmv_sum = float(r["gmv_sum"])
         else:
             n_open = n_view = n_purchase = 0
+            gmv_sum = 0.0
         rows.append(
             {
                 "cluster": int(cid),
                 "desc": UNASSIGNED_DESC if cid == UNASSIGNED else desc.get(int(cid), ""),
-                **_stats(n_open, n_view, n_purchase, int(sent_s.get(cid, 0)), int(reach_s.get(cid, 0))),
+                **_stats(n_open, n_view, n_purchase, int(sent_s.get(cid, 0)), int(reach_s.get(cid, 0)), gmv_sum),
             }
         )
     return rows
@@ -334,8 +346,9 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
         rl["cluster"] = _to_cluster(rl["user_seq"])
         rl["viewed"] = rl["viewed"].astype(int)
         rl["purchased"] = rl["purchased"].astype(int)
+        rl["gmv"] = pd.to_numeric(rl["gmv"], errors="coerce").fillna(0.0)
     else:
-        rl = pd.DataFrame(columns=["push_seq", "user_seq", "viewed", "purchased", "cluster"])
+        rl = pd.DataFrame(columns=["push_seq", "user_seq", "viewed", "purchased", "gmv", "cluster"])
 
     if len(send_df):
         send_df["cluster"] = _to_cluster(send_df["user_seq"])
@@ -347,7 +360,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
     sent_total = send_df.groupby("cluster").size() if len(send_df) else pd.Series(dtype="int64")
     reach_total = reach_df.groupby("cluster").size() if len(reach_df) else pd.Series(dtype="int64")
     open_by_push = {int(pseq): grp for pseq, grp in rl.groupby("push_seq")} if len(rl) else {}
-    empty_open = pd.DataFrame(columns=["user_seq", "viewed", "purchased", "cluster"])
+    empty_open = pd.DataFrame(columns=["user_seq", "viewed", "purchased", "gmv", "cluster"])
 
     # ── 푸시별 결과 (메타 순서 = push_at 오름차순) ──
     pushes_out = []
@@ -362,6 +375,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
             int(g["purchased"].sum()) if len(g) else 0,
             int(sent_s.sum()),
             int(reach_s.sum()),
+            float(g["gmv"].sum()) if len(g) else 0.0,
         )
         # 카테고리: 매핑에 저장된 값 우선(신규 푸시는 push_result 미적재일 수 있음), 없으면 push_result
         cat = manual.get(pseq, {}).get("category") or (m.category if pd.notna(m.category) else None)
@@ -386,6 +400,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
         int(rl["purchased"].sum()) if len(rl) else 0,
         int(len(send_df)),
         int(len(reach_df)),
+        float(rl["gmv"].sum()) if len(rl) else 0.0,
     )
     by_cluster_total = _cluster_block(rl, desc, k, sent_total, reach_total)
 
