@@ -23,7 +23,7 @@ class RefreshReq(BaseModel):
 
 @router.post("/cluster-snapshot/refresh", response_model=JobRes)
 def refresh(req: RefreshReq) -> JobRes:
-    """발송가능 전체 모수 → 현재시점 피처 → 클러스터 배정 (Snowflake 5~15분, 비동기 job)."""
+    """발송가능 전체 모수 → 현재시점 피처 → 클러스터 배정 (Snowflake 약 3~15분, 비동기 job)."""
     job_id = jobs.start_exclusive("snapshot", refresh_snapshot, n_day=req.n_day)
     if job_id is None:
         raise HTTPException(409, "이미 최신화 작업이 실행 중입니다.")

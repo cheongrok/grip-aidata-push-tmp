@@ -1,7 +1,7 @@
 """푸시 클러스터 운영 도구 백엔드 — 로컬 전용 (인증 없음).
 
-실행: cd backend && uv run uvicorn app.main:app --reload --port 8000
-문서: http://localhost:8000/docs
+실행: cd backend && uv run uvicorn app.main:app --reload --port 8010
+문서: http://localhost:8010/docs
 """
 
 import sys

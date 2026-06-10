@@ -4,7 +4,7 @@
 기준시점 = 지금(at=CURRENT_TIMESTAMP), IS_OPEN 없음(스코어링 전용). temp-table 파이프라인 구조 동일.
 
 주의: run_ddl→run_snowflake 가 같은 세션이어야 하므로(TEMPORARY TABLE)
-      반드시 단일 스레드(job Lock)에서 호출할 것. 회당 Snowflake 5~15분 소요.
+      반드시 단일 스레드(job Lock)에서 호출할 것. 회당 Snowflake 약 3~15분 소요.
 """
 
 import json

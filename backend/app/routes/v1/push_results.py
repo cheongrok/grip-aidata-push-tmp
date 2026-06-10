@@ -54,7 +54,7 @@ def segment_conversion() -> SegmentConversionRes:
 
 @router.post("/push-results/segment-conversion/refresh", response_model=JobRes)
 def refresh_segment_conversion() -> JobRes:
-    """세그먼트별 전환율 재집계 (푸시→방송 역산 + 전환 집계, Snowflake 비동기 job)."""
+    """세그먼트별 전환율 재집계 (수기 확정 push→방송 매핑 기반 전환 집계, Snowflake 비동기 job)."""
     job_id = jobs.start_exclusive("segment_conversion", compute_segment_conversion)
     if job_id is None:
         raise HTTPException(409, "이미 집계 작업이 실행 중입니다.")

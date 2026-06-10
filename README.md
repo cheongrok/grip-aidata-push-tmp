@@ -18,7 +18,7 @@
 | 탭 | 하는 일 | 주요 데이터 |
 |---|---|---|
 | **푸시 현황** | 발송된 푸시의 도달·오픈·전환을 본다. ① 푸시별 오픈율 표/추이 ② **세그먼트(클러스터)별 전환** ③ **메시지 세그먼트별 커버리지** + 오픈 후 방송 자동 매핑(판매자명·push_seq로 방송 발견) | `data_anal.push_result`, 수기 매핑 `cache/push_content_id_map.json` |
-| **유저 클러스터** | [최신화] → 발송가능 전체 모수를 현재 시점 피처로 10개 클러스터에 배정. 클러스터별 규모·5월 오픈율·발송 가이드를 한 표로 | `cache/latest_cluster.csv` (회당 Snowflake 3~15분) |
+| **유저 클러스터** | [최신화] → 발송가능 전체 모수를 현재 시점 피처로 10개 클러스터에 배정. 클러스터별 규모·5월 오픈율·발송 가이드를 한 표로 | `cache/latest_cluster.csv` (회당 Snowflake 약 3~15분) |
 | **푸시 분배** | 보낼 푸시 N개(카테고리·시간대)를 입력 → 우선순위 높은 세그먼트부터 비교우위로 배분 → 푸시별 발송 대상 `user_id` CSV + 전체발송 대비 효율(클릭 커버리지·발송 절감·오픈율 배율). A/B 홀드아웃(대조군) 분리 옵션 | `latest_cluster.csv` + `cluster_push_stats.pkl` |
 
 ---
@@ -29,20 +29,21 @@
 backend/                         FastAPI (인증 없음 — 사내망/컨테이너 전용)
   app/
     main.py                      앱 생성 · /health · sys.path 에 repo 루트 추가(core import)
-    routes/v1/                   meta · push_results · cluster_snapshot · allocations · jobs  (prefix /api/v1)
+    routes/v1/                   meta · push_results · cluster_snapshot · allocations · jobs · ab_test  (prefix /api/v1)
     services/                    push_results · push_mapping · push_funnel · segment_conversion
-                                 · allocation_svc · cluster snapshot · jobs(단일실행 락)
-    models/responses.py          Pydantic 응답 (frontend/src/types/push.ts 와 1:1 동기화)
+                                 · allocation_svc · ab_test(A/B 효과검증) · snapshot · jobs(단일실행 락)
+    models/responses.py          Pydantic 요청/응답 모델 (frontend/src/types/push.ts 와 1:1 동기화)
   pyproject.toml · uv.lock       의존성 (uv)
 
 frontend/
-  src/pages/                     PushResultsPage · ClustersPage · AllocationPage
+  src/pages/                     PushResultsPage · ClusterSnapshotPage · AllocationPage
+  src/components/                AbTestSection(A/B 효과검증) · SegmentShareChart
   src/services/pushService.ts    axios API 클라이언트
   src/types/push.ts              백엔드 응답 타입
-  vite.config.ts                 dev 프록시 /api → :8010
+  vite.config.ts                 dev 프록시 /api → env API_TARGET (기본 :8000, 운영/로컬 dev 는 :8010 주입)
 
 core/                            백엔드와 분석 노트북이 공유하는 순수 로직
-  datasources/snowflake_kp.py    key-pair 인증 · run_query/run_snowflake/run_ddl (호출마다 새 연결, 스레드 안전)
+  datasources/snowflake_kp.py    key-pair 인증 · run_snowflake/run_ddl(전역 단일 세션·temp-table용, 스레드 비안전→job Lock) · run_query(호출마다 새 연결, 스레드 안전)
   push/
     audience.py                  발송가능 모수 SQL (마케팅 표준 쿼리)
     features.py                  현재 시점 피처 적재 + 스냅샷 갱신 (temp-table 파이프라인)

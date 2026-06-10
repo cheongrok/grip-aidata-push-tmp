@@ -2,7 +2,7 @@
 
 - kp_artifacts.pkl       : KPrototypes 모델·전처리 파라미터·클러스터 설명 (kmodes 패키지 필수)
 - cluster_push_stats.pkl : 5월 실측 클러스터 × 푸시카테고리 × 발송시간대 (n, opens)
-- MAY_ORDER              : 발송 우선순위 = 5월 전체 lift 순 (고정 — 새 푸시 성적으로 재정렬 금지)
+- MAY_ORDER              : 발송 우선순위 = 5월 전체 오픈율(opens/n) 내림차순 (고정 — 새 푸시 성적으로 재정렬 금지)
 """
 
 import pickle
