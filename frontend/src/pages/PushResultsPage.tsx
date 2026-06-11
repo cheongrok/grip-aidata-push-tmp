@@ -446,8 +446,9 @@ export default function PushResultsPage() {
             세그먼트 집계가 없습니다 — 위 <b>세그먼트별 전환율</b>에서 <b>[집계 실행]</b>을 먼저 누르세요.
           </p>
         ) : (
+          <div className="max-h-[26rem] overflow-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">push</th>
                 <th className="px-3 py-2 text-left font-medium">판매자</th>
@@ -581,6 +582,70 @@ export default function PushResultsPage() {
                   </tr>
                   )
                 })
+              })}
+            </tbody>
+          </table>
+          </div>
+        )}
+      </section>
+
+      {/* 최근 방송 오픈 vs 비오픈 (발송 모수 내) — 시청·구매율 */}
+      <section className="order-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="border-b border-slate-100 px-4 py-2.5">
+          <h3 className="text-sm font-semibold text-slate-600">
+            최근 {seg?.open_compare_n_pushes ?? 10}개 방송 종합 — 세그먼트별 오픈자 vs 비오픈자
+          </h3>
+          <p className="text-xs leading-relaxed text-slate-400">
+            발송받은 사람을 세그먼트(활성도)별로 묶어, 각 안에서 <b>오픈 / 비오픈</b>의 유효시청·구매율을 비교. <b>[집계 갱신]</b> 시 최신화.
+            <br />※ 같은 세그먼트 안에서도 오픈자 율이 높지만, 이는 푸시 효과가 아니라 <b>관심 있는 사람이 오픈도 한다</b>는 자기선택일 수 있어요 — 진짜 효과는 A/B로. (하위 세그먼트는 오픈 수가 적어 율이 출렁입니다.)
+          </p>
+        </div>
+        {!seg || !seg.open_compare || seg.open_compare.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-slate-500">집계 데이터가 없습니다 — <b>세그먼트별 전환율</b>에서 [집계 실행/갱신]을 누르세요.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">세그먼트</th>
+                <th className="px-3 py-2 text-right font-medium">발송</th>
+                <th className="px-3 py-2 text-right font-medium">오픈(율)</th>
+                <th className="border-l border-slate-200 px-3 py-2 text-right font-medium">오픈자 시청율</th>
+                <th className="px-3 py-2 text-right font-medium">오픈자 구매율</th>
+                <th className="border-l border-slate-200 px-3 py-2 text-right font-medium">비오픈 시청율</th>
+                <th className="px-3 py-2 text-right font-medium">비오픈 구매율</th>
+              </tr>
+            </thead>
+            <tbody>
+              {seg.open_compare.map((r) => {
+                const sparse = r.n_open < 30 // 오픈 표본 적으면 율 신뢰도 낮음 → 흐리게
+                return (
+                  <tr key={r.cluster} className={`border-t border-slate-100 ${sparse ? 'opacity-50' : ''}`}>
+                    <td className="px-3 py-2">
+                      {r.cluster === -1 ? (
+                        <span className="font-semibold text-slate-500">미배정</span>
+                      ) : (
+                        <span className="font-semibold text-slate-700">
+                          S{r.rank} {r.short_name}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-600">{num(r.n_sent)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-600">
+                      {num(r.n_open)}
+                      <span className="ml-1 text-[10px] text-slate-400">({r.open_rate_pct}%)</span>
+                    </td>
+                    <td className="border-l border-slate-200 px-3 py-2 text-right font-semibold tabular-nums text-indigo-600">
+                      {r.opener_view_rate_pct}%
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums text-indigo-600">
+                      {r.opener_purchase_rate_pct}%
+                    </td>
+                    <td className="border-l border-slate-200 px-3 py-2 text-right tabular-nums text-slate-400">
+                      {r.nonopener_view_rate_pct}%
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-400">{r.nonopener_purchase_rate_pct}%</td>
+                  </tr>
+                )
               })}
             </tbody>
           </table>
@@ -731,7 +796,7 @@ export default function PushResultsPage() {
               세그먼트별 전환율{seg ? ` (${seg.period_start.slice(5)}~${seg.period_end.slice(5)} 방송)` : ''}
             </h3>
             <p className="text-xs text-slate-400">
-              수기 확정한 push→방송 매핑 기준 — 푸시를 오픈한 뒤(<b>발송시각 이후</b>) 해당 방송을 유효시청·구매한 유저를 클러스터별로 집계합니다
+              수기 확정한 push→방송 매핑 기준 — 푸시를 오픈한 뒤(<b>발송시각 이후</b>) 해당 방송을 유효시청·구매한 유저를 세그먼트별로 집계합니다
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -857,7 +922,7 @@ export default function PushResultsPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">클러스터</th>
+                  <th className="px-3 py-2 text-left font-medium">세그먼트</th>
                   <th className="px-3 py-2 text-left font-medium">설명</th>
                   <th className="px-3 py-2 text-right font-medium">오픈</th>
                   <th className="px-3 py-2 text-right font-medium">유효시청 (n · %)</th>

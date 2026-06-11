@@ -174,6 +174,20 @@ export interface SegmentPushRow {
   clusters: SegmentClusterStats[] // 발송 우선순위(rank 1~10) 순, 미배정 마지막, n_open=0 포함
 }
 
+// 최근 방송 종합 — 세그먼트별 오픈자 vs 비오픈자 비교 (발송 모수 내)
+export interface OpenCompareRow {
+  cluster: number // -1=미배정
+  rank: number | null // S1~S10, 미배정은 null
+  short_name: string
+  n_sent: number // 발송(누적, 최근 N방송 합산)
+  n_open: number
+  open_rate_pct: number
+  opener_view_rate_pct: number
+  opener_purchase_rate_pct: number
+  nonopener_view_rate_pct: number
+  nonopener_purchase_rate_pct: number
+}
+
 export interface SegmentConversionRes {
   computed_at: string // 집계 시각 (isoformat)
   cluster_snapshot_at: string // latest_cluster.csv SNAPSHOT_AT 첫 값
@@ -184,6 +198,37 @@ export interface SegmentConversionRes {
   totals: SegmentStats
   by_cluster_total: SegmentClusterStats[] // cluster -1(미배정) 포함
   pushes: SegmentPushRow[]
+  open_compare?: OpenCompareRow[] // 최근 방송 종합 세그먼트별 오픈/비오픈 비교 (옵셔널)
+  open_compare_n_pushes?: number // open_compare 에 합산된 최근 방송 수
+  cluster_user_samples?: Record<string, ClusterUserSampleRow[]> // 원본 cluster id "0".."9" → 오픈자 샘플(등급순)
+}
+
+// ── 클러스터 내 유저 샘플 분석 ──
+export interface ClusterUserSampleRow {
+  user_seq: number
+  user_id: string
+  user_name: string
+  grade: number // 무등급=10, 높을수록 상위
+  gender: string // M/F/X/''
+}
+
+export interface WatchedBroadcast {
+  seller: string
+  title: string
+  watch_sec: number // 최근 90일 누적 시청 초
+}
+
+export interface ClusterUserProfileRes {
+  user_seq: number
+  user_id: string
+  user_name: string
+  grade: number
+  gender: string | null
+  age: number | null // BIRTH 연도 기반, 없으면 null
+  total_spend: number // 최근 90일
+  purchase_count: number // 최근 90일
+  aov: number
+  top_broadcasts: WatchedBroadcast[]
 }
 
 export interface MetaRes {

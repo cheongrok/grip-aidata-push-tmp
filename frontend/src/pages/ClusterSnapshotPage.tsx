@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import ClusterUserSample from '../components/ClusterUserSample'
 import SegmentShareChart from '../components/SegmentShareChart'
 import { useJobPolling } from '../hooks/useJobPolling'
 import {
@@ -82,9 +83,9 @@ export default function ClusterSnapshotPage() {
     <div className="space-y-6">
       <header className="flex items-end justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">유저 클러스터</h2>
+          <h2 className="text-xl font-bold text-slate-800">유저 세그먼트</h2>
           <p className="text-sm text-slate-500">
-            발송가능 전체 모수(마케팅 기준)를 현재 시점 행동 피처로 10개 클러스터에 배정합니다
+            발송가능 전체 모수(마케팅 기준)를 현재 시점 행동 피처로 10개 세그먼트에 배정합니다
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -106,7 +107,7 @@ export default function ClusterSnapshotPage() {
               disabled={running}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-40"
             >
-              {running ? '최신화 중…' : '유저 클러스터 최신화하기'}
+              {running ? '최신화 중…' : '유저 세그먼트 최신화하기'}
             </button>
           </div>
           <p className="text-xs text-slate-400">회당 Snowflake 5~15분 소요 · 푸시 발송 전 갱신 권장</p>
@@ -127,7 +128,7 @@ export default function ClusterSnapshotPage() {
 
       {loaded && !snap && !running && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          아직 스냅샷이 없습니다. <b>[유저 클러스터 최신화하기]</b>를 눌러 첫 스냅샷을 만드세요.
+          아직 스냅샷이 없습니다. <b>[유저 세그먼트 최신화하기]</b>를 눌러 첫 스냅샷을 만드세요.
           <p className="mt-1 text-xs">회당 Snowflake 5~15분 소요 · 푸시 발송 전 갱신 권장</p>
         </div>
       )}
@@ -159,7 +160,7 @@ export default function ClusterSnapshotPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">클러스터</th>
+                  <th className="px-3 py-2 text-left font-medium">세그먼트</th>
                   <th className="px-3 py-2 text-left font-medium">Tier</th>
                   <th className="px-3 py-2 text-right font-medium">인원</th>
                   <th className="px-3 py-2 text-left font-medium">비중</th>
@@ -211,7 +212,7 @@ export default function ClusterSnapshotPage() {
               <div>
                 <h3 className="text-sm font-semibold text-slate-600">세그먼트별 오픈 점유 vs 구매 기여</h3>
                 <p className="text-xs text-slate-400">
-                  실측 전환(수기 매핑 기준)으로 본 클러스터 등급 검증 — 상위가 구매를 만들고 하위는 오픈만 차지하는지.
+                  실측 전환(수기 매핑 기준)으로 본 세그먼트 등급 검증 — 상위가 구매를 만들고 하위는 오픈만 차지하는지.
                   {seg && (
                     <> · 집계 {seg.computed_at.replace('T', ' ').slice(0, 16)} · 스냅샷 기준 {seg.cluster_snapshot_at.slice(0, 16)}</>
                   )}
@@ -225,7 +226,7 @@ export default function ClusterSnapshotPage() {
                 >
                   {segRunning ? '집계 중…' : seg ? '집계 갱신' : '집계 실행'}
                 </button>
-                <p className="text-xs text-slate-400">수 분 소요 · 클러스터 최신화와 별개</p>
+                <p className="text-xs text-slate-400">수 분 소요 · 세그먼트 최신화와 별개</p>
               </div>
             </div>
 
@@ -243,7 +244,7 @@ export default function ClusterSnapshotPage() {
 
             {seg && seg.cluster_snapshot_at.slice(0, 16) < snap.snapshot_at.slice(0, 16) && (
               <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-                ⚠ 이 차트는 이전 클러스터 스냅샷({seg.cluster_snapshot_at.slice(0, 16)}) 기준입니다. 현재
+                ⚠ 이 차트는 이전 세그먼트 스냅샷({seg.cluster_snapshot_at.slice(0, 16)}) 기준입니다. 현재
                 스냅샷({snap.snapshot_at.slice(0, 16)})에 맞추려면 <b>[집계 갱신]</b>을 누르세요.
               </p>
             )}
@@ -256,6 +257,22 @@ export default function ClusterSnapshotPage() {
                   아직 전환 집계가 없습니다. <b>[집계 실행]</b>을 눌러 계산하세요 (수 분 소요).
                 </div>
               )
+            )}
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-semibold text-slate-600">세그먼트 내 유저 샘플 분석</h3>
+              <p className="text-xs text-slate-400">
+                각 세그먼트에서 푸시를 <b>오픈</b>한 유저(운영자 제외)를 등급순으로 표시 — 행을 선택하고 [조회]로 프로필(최근 90일)을 확인하세요.
+              </p>
+            </div>
+            {seg ? (
+              <ClusterUserSample seg={seg} />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                위 <b>[집계 실행]</b>을 누르면 세그먼트별 오픈 유저 샘플이 함께 생성됩니다.
+              </div>
             )}
           </section>
         </>

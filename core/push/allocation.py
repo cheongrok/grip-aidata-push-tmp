@@ -109,7 +109,7 @@ def allocate(
 
     if manual:
         if not all(clusters_sets):
-            raise ValueError("수동 모드에서는 모든 푸시에 클러스터를 1개 이상 선택해야 합니다.")
+            raise ValueError("수동 모드에서는 모든 푸시에 세그먼트를 1개 이상 선택해야 합니다.")
         union = set().union(*clusters_sets)
         pool = [c for c in may_order if c in union]  # 선택된 클러스터만 (발송 우선순위 순)
         n_pool = np.array([float(cluster_sizes[c]) for c in pool])

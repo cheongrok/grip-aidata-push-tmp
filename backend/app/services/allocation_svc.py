@@ -61,7 +61,7 @@ def delivery_rate(n_day: int = 90, max_age_days: int = 7) -> dict:
 def create_allocation(pushes: list[dict], top_k: int, volumes: list[float] | None, seed: int = 42, holdout_pct: float = 0.0) -> dict:
     meta = read_meta()
     if meta is None or not LATEST_CLUSTER_CSV.exists():
-        raise SnapshotMissingError("유저 클러스터 스냅샷이 없습니다 — 페이지 ②에서 '유저 클러스터 최신화하기'를 먼저 실행하세요.")
+        raise SnapshotMissingError("유저 세그먼트 스냅샷이 없습니다 — 페이지 ②에서 '유저 세그먼트 최신화하기'를 먼저 실행하세요.")
 
     art = artifacts.load()
     counts = {int(k): int(v) for k, v in meta["cluster_counts"].items()}
