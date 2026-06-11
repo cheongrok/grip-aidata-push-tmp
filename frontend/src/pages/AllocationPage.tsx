@@ -77,18 +77,18 @@ export default function AllocationPage() {
       <header>
         <h2 className="text-xl font-bold text-slate-800">푸시 분배</h2>
         <p className="text-sm text-slate-500">
-          카테고리·시간대를 입력하면 상위 세그먼트부터 비교우위로 매칭해 푸시별 발송 대상 user_id CSV를 만듭니다
+          카테고리·시간대를 입력하면 상위 세그먼트부터 비교우위로 매칭해 푸시별 발송 대상 user_id CSV를 만들어요
         </p>
       </header>
 
       {snapshotMissing && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          ⚠ 유저 세그먼트 스냅샷이 없습니다 — <b>유저 세그먼트</b> 페이지에서 먼저 최신화하세요.
+          ⚠ 유저 세그먼트 스냅샷이 없어요 — <b>유저 세그먼트</b> 페이지에서 먼저 최신화하세요.
         </p>
       )}
       {meta?.snapshot.stale && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          ⚠ 스냅샷이 7일 이상 지났습니다 ({meta.snapshot.snapshot_at?.slice(0, 16)}) — 발송 전 최신화를 권장합니다.
+          ⚠ 스냅샷이 7일 이상 지났어요 ({meta.snapshot.snapshot_at?.slice(0, 16)}) — 발송 전 최신화를 권장해요.
         </p>
       )}
 
@@ -157,7 +157,7 @@ export default function AllocationPage() {
 
             {mode === 'manual' && (
               <div className="flex flex-wrap items-center gap-1.5 pl-16">
-                {clusters.length === 0 && <span className="text-xs text-slate-400">스냅샷이 없어 그룹을 불러올 수 없습니다.</span>}
+                {clusters.length === 0 && <span className="text-xs text-slate-400">스냅샷이 없어 그룹을 불러올 수 없어요.</span>}
                 {clusters.map((c) => {
                   const on = (p.clusters ?? []).includes(c.cluster)
                   return (
@@ -193,7 +193,7 @@ export default function AllocationPage() {
             {snapAgeDays >= 1 ? '⚠ ' : '📌 '}
             유저 세그먼트 스냅샷 기준: <b>{snapAt?.slice(0, 10)}</b> ({snapAgeDays === 0 ? '오늘' : `${snapAgeDays}일 전`})
             {snapAgeDays >= 1 &&
-              ' — 그 이후 새로 시청을 시작한 유저는 이 명단에 없습니다. 발송이라면 [유저 세그먼트] 탭에서 최신화했는지 확인하세요.'}
+              ' — 그 이후 새로 시청을 시작한 유저는 이 명단에 없어요. 발송이라면 [유저 세그먼트] 탭에서 최신화했는지 확인하세요.'}
           </div>
         )}
 
@@ -245,7 +245,7 @@ export default function AllocationPage() {
         <p className="text-xs leading-relaxed text-slate-400">
           💡 반응이 좋은 <b className="text-slate-600">상위 그룹만 골라 보내면</b> 발송량은 확 줄고 클릭은 대부분 그대로예요.
           예를 들어 상위 5개(🟢 상시 발송 · 🟡 조건부 발송)만 보내면, 전체의 41%만 발송해도 클릭의 2/3 정도가 유지된 걸 6월에 확인했어요.{' '}
-          화면의 예상 수치는 5월 데이터로 계산한 참고용 값이라, 실제 효과는 일부를 무작위로 나눠 비교(A/B)해 보면 가장 정확합니다.
+          화면의 예상 수치는 5월 데이터로 계산한 참고용 값이라, 실제 효과는 일부를 무작위로 나눠 비교(A/B)해 보면 가장 정확해요.
         </p>
       </section>
 
@@ -255,14 +255,14 @@ export default function AllocationPage() {
         <>
           {result.delivery_rate != null && result.delivery_rate < 1 && (
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-              기대 오픈·오픈율은 <b className="text-slate-700">발송 대비</b> 기준입니다 — 모델 CTR(도달 대비)에 도달률{' '}
-              <b className="text-slate-700">{(result.delivery_rate * 100).toFixed(1)}%</b>를 반영했습니다 ({result.delivery_basis}).
+              기대 오픈·오픈율은 <b className="text-slate-700">발송 대비</b> 기준이에요 — 모델 CTR(도달 대비)에 도달률{' '}
+              <b className="text-slate-700">{(result.delivery_rate * 100).toFixed(1)}%</b>를 반영했어요 ({result.delivery_basis}).
               <br />※ 도달률은 카테고리 간엔 균일하나 세그먼트별 편차는 측정 불가(유저단위 발송 로그 없음)라 글로벌값을 일괄 적용 — 실효과는 무작위 A/B로 확인하세요.
             </p>
           )}
           {hasHoldout && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              🧪 A/B 모드: 각 푸시 발송 대상에서 대조군(미발송)을 무작위로 분리했습니다. <b>발송 CSV만 실제 발송</b>하고,
+              🧪 A/B 모드: 각 푸시 발송 대상에서 대조군(미발송)을 무작위로 분리했어요. <b>발송 CSV만 실제 발송</b>하고,
               방송 후 발송군 vs 대조군의 그 방송 상품 구매율 차이로 순효과(incremental)를 측정하세요.
             </p>
           )}

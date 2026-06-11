@@ -36,7 +36,7 @@ def save_content_map(req: ContentMapReq) -> ContentMapRes:
         raise HTTPException(422, "content_ids 를 1개 이상 입력하세요.")
     allowed = set(artifacts.categories())
     if req.category not in allowed:
-        raise HTTPException(422, f"허용되지 않은 카테고리입니다: '{req.category}' (허용: {sorted(allowed)})")
+        raise HTTPException(422, f"허용되지 않은 카테고리예요: '{req.category}' (허용: {sorted(allowed)})")
     push_mapping.upsert_content_id_map(
         req.push_seq, req.content_ids, req.category, req.seller_name, req.title
     )
@@ -57,5 +57,5 @@ def refresh_segment_conversion() -> JobRes:
     """세그먼트별 전환율 재집계 (수기 확정 push→방송 매핑 기반 전환 집계, Snowflake 비동기 job)."""
     job_id = jobs.start_exclusive("segment_conversion", compute_segment_conversion)
     if job_id is None:
-        raise HTTPException(409, "이미 집계 작업이 실행 중입니다.")
+        raise HTTPException(409, "이미 집계 작업이 실행 중이에요.")
     return JobRes(**jobs.get_job(job_id))

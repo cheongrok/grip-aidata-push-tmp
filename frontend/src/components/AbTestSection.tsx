@@ -5,11 +5,11 @@ import type { AbMetric, AbVerifyRes } from '../types/push'
 // CSV(USER_ID,USER_SEQ,CLUSTER) 파싱 — 헤더로 컬럼 위치 찾기, USER_SEQ 필수
 function parseCsv(text: string): { user_seqs: number[]; clusters: number[] } {
   const lines = text.replace(/^﻿/, '').trim().split(/\r?\n/)
-  if (lines.length < 2) throw new Error('빈 CSV 입니다')
+  if (lines.length < 2) throw new Error('빈 CSV 예요')
   const header = lines[0].split(',').map((h) => h.trim().toUpperCase())
   const iSeq = header.indexOf('USER_SEQ')
   const iClu = header.indexOf('CLUSTER')
-  if (iSeq < 0) throw new Error('CSV에 USER_SEQ 컬럼이 없습니다')
+  if (iSeq < 0) throw new Error('CSV에 USER_SEQ 컬럼이 없어요')
   const user_seqs: number[] = []
   const clusters: number[] = []
   for (let k = 1; k < lines.length; k++) {
@@ -100,7 +100,7 @@ export default function AbTestSection() {
         <h3 className="text-sm font-semibold text-slate-700">푸시알림 효과검증 (A/B)</h3>
         <p className="text-xs leading-relaxed text-slate-400">
           위에서 만든 <b>발송 CSV·대조군 CSV</b>를 올리고 <b>push_seq·content_seq</b>를 입력하면, 발송 이후 그 방송의{' '}
-          <b>유효시청·구매·GMV</b>를 두 그룹에서 집계해 <b>증분(발송−대조)</b>과 유의성(z검정)을 냅니다. 발송 며칠 뒤 실행하세요.
+          <b>유효시청·구매·GMV</b>를 두 그룹에서 집계해 <b>증분(발송−대조)</b>과 유의성(z검정)을 내요. 발송 며칠 뒤 실행하세요.
         </p>
       </div>
 
@@ -266,9 +266,9 @@ export default function AbTestSection() {
           )}
 
           <p className="text-xs leading-relaxed text-slate-400">
-            증분이 <b>+이고 ★유의(p&lt;0.05)</b> 면 그 푸시가 실제로 시청·구매를 추가로 일으킨 것입니다. 구매는 희귀해
+            증분이 <b>+이고 ★유의(p&lt;0.05)</b> 면 그 푸시가 실제로 시청·구매를 추가로 일으킨 거예요. 구매는 희귀해
             단일 푸시·작은 세그먼트는 유의하기 어려우니, 1차 지표는 <b>유효시청</b>으로 보고 여러 푸시를 누적하세요.
-            (발송군 전체 vs 대조군 전체 비교 — 오픈자만 따로 보면 안 됩니다.)
+            (발송군 전체 vs 대조군 전체 비교 — 오픈자만 따로 보면 안 돼요.)
           </p>
         </div>
       )}

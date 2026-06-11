@@ -24,7 +24,7 @@ export function errorMessage(e: unknown): string {
       return detail.map((d: { loc?: unknown[]; msg?: string }) => `${(d.loc ?? []).join('.')}: ${d.msg}`).join(' / ')
     }
     if (detail) return String(detail)
-    if (e.code === 'ERR_NETWORK') return '백엔드에 연결할 수 없습니다.'
+    if (e.code === 'ERR_NETWORK') return '백엔드에 연결할 수 없어요.'
     return `요청 실패 (${e.response?.status ?? e.code})`
   }
   return String(e)

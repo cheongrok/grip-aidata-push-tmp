@@ -54,7 +54,7 @@ def compute_funnel(push_seq: int, content_seqs: list[int], push_at: str) -> dict
     """push_seq + 지정 content_seqs 의 오픈→유효시청→구매 펀넬 (유저 distinct, 발송 이후 기준)."""
     content_seqs = sorted({int(c) for c in content_seqs})
     if not content_seqs:
-        raise ValueError("content_seqs 가 비어 있습니다")
+        raise ValueError("content_seqs 가 비어 있어요")
 
     df = run_query(_funnel_sql(push_seq, content_seqs, push_at))
     df.columns = df.columns.str.lower()

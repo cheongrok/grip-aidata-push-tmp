@@ -119,11 +119,11 @@ def verify(
     if not content_seqs:
         raise ValueError("content_seq 를 1개 이상 입력하세요.")
     if not t_user_seqs or not c_user_seqs:
-        raise ValueError("발송군과 대조군 CSV 가 모두 필요합니다.")
+        raise ValueError("발송군과 대조군 CSV 가 모두 필요해요.")
 
     t_start = _push_at(push_seq)
     if t_start is None:
-        raise ValueError(f"push_seq {push_seq} 의 발송 기록(send_status=Y)이 없습니다 — 발송된 푸시인지 확인하세요.")
+        raise ValueError(f"push_seq {push_seq} 의 발송 기록(send_status=Y)이 없어요 — 발송된 푸시인지 확인하세요.")
     t_end = (
         (pd.Timestamp(t_start) + timedelta(days=int(days))).strftime("%Y-%m-%d %H:%M:%S")
         if days else _now()
@@ -144,13 +144,13 @@ def verify(
     if overlap:
         tm = tm[~tm["user_seq"].isin(overlap)]
         cm = cm[~cm["user_seq"].isin(overlap)]
-        warnings.append(f"발송군·대조군에 겹치는 유저 {len(overlap):,}명 — 두 그룹에서 제외하고 계산했습니다.")
+        warnings.append(f"발송군·대조군에 겹치는 유저 {len(overlap):,}명 — 두 그룹에서 제외하고 계산했어요.")
 
     T, C = _arm_stats(tm), _arm_stats(cm)
     if T["n_purchase"] + C["n_purchase"] < 20:
-        warnings.append("구매 표본이 작아(<20) 구매 증분은 통계적으로 불안정합니다 — 유효시청 지표·복수 푸시 누적을 권장합니다.")
+        warnings.append("구매 표본이 작아(<20) 구매 증분은 통계적으로 불안정해요 — 유효시청 지표·복수 푸시 누적을 권장해요.")
     if days is None:
-        warnings.append("측정 종료를 '현재'로 잡았습니다 — 발송 직후라면 뒤늦은 구매가 덜 반영될 수 있습니다(며칠 뒤 재실행 권장).")
+        warnings.append("측정 종료를 '현재'로 잡았어요 — 발송 직후라면 뒤늦은 구매가 덜 반영될 수 있어요(며칠 뒤 재실행 권장).")
 
     def metric(key_rate: str, t_count: int, c_count: int) -> dict:
         z, pv = _ztest(t_count, T["n_users"], c_count, C["n_users"])

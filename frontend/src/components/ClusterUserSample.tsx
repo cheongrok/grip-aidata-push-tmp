@@ -38,7 +38,7 @@ export default function ClusterUserSample({ seg }: { seg: SegmentConversionRes }
   if (!hasSamples) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-        오픈 유저 샘플이 아직 없습니다. 위 <b>[집계 갱신]</b>을 누르면 세그먼트별 오픈 유저가 함께 생성됩니다.
+        오픈 유저 샘플이 아직 없어요. 위 <b>[집계 갱신]</b>을 누르면 세그먼트별 오픈 유저가 함께 생성돼요.
       </div>
     )
   }

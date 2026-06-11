@@ -260,7 +260,7 @@ export default function PushResultsPage() {
         disc.seller_name,
         disc.title,
       )
-      setSaveMsg('저장됨 — 위 [집계 갱신]을 누르면 커버리지에 반영됩니다.')
+      setSaveMsg('저장됨 — 위 [집계 갱신]을 누르면 커버리지에 반영돼요.')
     } catch (e) {
       setFError(errorMessage(e))
     } finally {
@@ -323,7 +323,7 @@ export default function PushResultsPage() {
           <div>
             <h3 className="text-sm font-semibold text-slate-600">푸시 메시지 성과 랭킹 (TOP / BOTTOM 10)</h3>
             <p className="text-xs text-slate-400">
-              등록 푸시를 메시지 단위로 줄 세웁니다 — <b>[집계 갱신]</b> 시 함께 최신화. 표본이 작으면 비율이 출렁여서 <b>최소 오픈수</b>로 거릅니다.
+              등록 푸시를 메시지 단위로 줄 세워요 — <b>[집계 갱신]</b> 시 함께 최신화. 표본이 작으면 비율이 출렁여서 <b>최소 오픈수</b>로 걸러요.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
@@ -350,9 +350,9 @@ export default function PushResultsPage() {
           </div>
         </div>
         {!seg ? (
-          <p className="px-4 py-6 text-sm text-slate-500">집계가 없습니다 — 아래 [집계 실행]을 먼저 누르세요.</p>
+          <p className="px-4 py-6 text-sm text-slate-500">집계가 없어요 — 아래 [집계 실행]을 먼저 누르세요.</p>
         ) : !rankList || rankList.eligible === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-500">최소 오픈 {rankMinOpen} 이상인 푸시가 없습니다 — 기준을 낮춰보세요.</p>
+          <p className="px-4 py-6 text-sm text-slate-500">최소 오픈 {rankMinOpen} 이상인 푸시가 없어요 — 기준을 낮춰보세요.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2">
             {(
@@ -392,7 +392,7 @@ export default function PushResultsPage() {
                                 {p.category}
                               </span>
                             )}
-                            오픈 {num(p.overall.n_open)} · 거래 {num(p.overall.n_purchase)}
+                            오픈 {num(p.overall.n_open)} / 발송 {num(p.overall.n_sent)} · 거래 {num(p.overall.n_purchase)}
                           </span>
                         </td>
                         <td className={`px-3 py-1.5 text-right font-semibold tabular-nums ${col.good ? 'text-emerald-700' : 'text-rose-600'}`}>
@@ -418,7 +418,7 @@ export default function PushResultsPage() {
         <p className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">
           기준{' '}
           <b>{rankMetric === 'purchase' ? '거래전환율' : rankMetric === 'view' ? '유효시청률' : rankMetric === 'aov' ? '객단가' : '거래수'}</b>{' '}
-          · 최소 오픈 {rankMinOpen} · 대상 {rankList?.eligible ?? 0}/{rankList?.total ?? 0}개 푸시. 거래는 푸시당 한 자릿수라 거래전환율 순위는 표본 영향이 큽니다 — 안정적 비교는 <b>유효시청률</b> 권장.
+          · 최소 오픈 {rankMinOpen} · 대상 {rankList?.eligible ?? 0}/{rankList?.total ?? 0}개 푸시. 거래는 푸시당 한 자릿수라 거래전환율 순위는 표본 영향이 커요 — 안정적 비교는 <b>유효시청률</b> 권장.
         </p>
       </section>
 
@@ -428,7 +428,7 @@ export default function PushResultsPage() {
             <h3 className="text-sm font-semibold text-slate-600">푸시 메세지 세그먼트별 커버리지</h3>
             <p className="text-xs text-slate-400">
               각 푸시를 세그먼트별로 분해 — <b>push 번호 클릭 시 S1 아래로 펼침</b>. 발송·도달·오픈·유효시청·거래{' '}
-              <b>인원수</b> + 율(작은 글씨, 오픈자 기준). 괄호는 위쪽 세그먼트까지 <b>누적 커버리지</b>(발송·도달·오픈·거래 모두 마지막 행 100%) — 거래는 상위 세그먼트가 전체 구매자의 몇 %를 커버하는지. 발송/도달은 [집계 갱신] 시점 기준.{' '}
+              <b>인원수</b> + 율(작은 글씨, 오픈자 기준). 괄호는 위쪽 세그먼트까지 <b>누적 커버리지</b>(발송·도달·오픈·거래 모두 마지막 행 100%) — 거래는 상위 세그먼트가 전체 구매자의 몇 %를 커버하는지예요. 발송/도달은 [집계 갱신] 시점 기준이에요.{' '}
               <span className="font-semibold text-indigo-600">굵은 인디고 선</span> = 위쪽 세그먼트로 오픈자 누적 50% 도달 지점.
             </p>
           </div>
@@ -443,7 +443,7 @@ export default function PushResultsPage() {
         </div>
         {!seg ? (
           <p className="px-4 py-6 text-sm text-slate-500">
-            세그먼트 집계가 없습니다 — 위 <b>세그먼트별 전환율</b>에서 <b>[집계 실행]</b>을 먼저 누르세요.
+            세그먼트 집계가 없어요 — 위 <b>세그먼트별 전환율</b>에서 <b>[집계 실행]</b>을 먼저 누르세요.
           </p>
         ) : (
           <div className="max-h-[26rem] overflow-auto">
@@ -597,11 +597,11 @@ export default function PushResultsPage() {
           </h3>
           <p className="text-xs leading-relaxed text-slate-400">
             발송받은 사람을 세그먼트(활성도)별로 묶어, 각 안에서 <b>오픈 / 비오픈</b>의 유효시청·구매율을 비교. <b>[집계 갱신]</b> 시 최신화.
-            <br />※ 같은 세그먼트 안에서도 오픈자 율이 높지만, 이는 푸시 효과가 아니라 <b>관심 있는 사람이 오픈도 한다</b>는 자기선택일 수 있어요 — 진짜 효과는 A/B로. (하위 세그먼트는 오픈 수가 적어 율이 출렁입니다.)
+            <br />※ 같은 세그먼트 안에서도 오픈자 율이 높지만, 이는 푸시 효과가 아니라 <b>관심 있는 사람이 오픈도 한다</b>는 자기선택일 수 있어요 — 진짜 효과는 A/B로. (하위 세그먼트는 오픈 수가 적어 율이 출렁여요.)
           </p>
         </div>
         {!seg || !seg.open_compare || seg.open_compare.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-500">집계 데이터가 없습니다 — <b>세그먼트별 전환율</b>에서 [집계 실행/갱신]을 누르세요.</p>
+          <p className="px-4 py-6 text-sm text-slate-500">집계 데이터가 없어요 — <b>세그먼트별 전환율</b>에서 [집계 실행/갱신]을 누르세요.</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500">
@@ -657,9 +657,9 @@ export default function PushResultsPage() {
           <h3 className="text-sm font-semibold text-slate-600">푸시 방송 매칭 및 결과 데이터 추가</h3>
           <p className="text-xs leading-relaxed text-slate-400">
             <b>push_seq · 판매자이름 · 카테고리</b> 3개만 입력하면 발송시각 전후 방송을 자동으로 찾아 오픈→유효시청→구매를 미리 보여주고,{' '}
-            <b>[커버리지에 추가]</b> 시 위 '세그먼트별 전환율·커버리지'에 들어갑니다(이후 <b>[집계 갱신]</b> 필요).
+            <b>[커버리지에 추가]</b> 시 위 '세그먼트별 전환율·커버리지'에 들어가요(이후 <b>[집계 갱신]</b> 필요).
             <br />
-            <span className="text-amber-600">⚠ 판매자이름은 띄어쓰기·대소문자·이모지까지 정확히 일치해야 합니다</span>{' '}
+            <span className="text-amber-600">⚠ 판매자이름은 띄어쓰기·대소문자·이모지까지 정확히 일치해야 해요</span>{' '}
             (예: <code className="rounded bg-slate-100 px-1">SABABA 사바바</code>).
           </p>
         </div>
@@ -781,7 +781,7 @@ export default function PushResultsPage() {
                 {saving ? '저장 중…' : `커버리지에 추가 (${fCategory})`}
               </button>
               {!canSave && (
-                <span className="text-xs text-amber-600">방송이 1개 이상 발견되고 발송 기록이 있어야 추가됩니다.</span>
+                <span className="text-xs text-amber-600">방송이 1개 이상 발견되고 발송 기록이 있어야 추가돼요.</span>
               )}
               {saveMsg && <span className="text-xs font-semibold text-emerald-600">✓ {saveMsg}</span>}
             </div>
@@ -796,7 +796,7 @@ export default function PushResultsPage() {
               세그먼트별 전환율{seg ? ` (${seg.period_start.slice(5)}~${seg.period_end.slice(5)} 방송)` : ''}
             </h3>
             <p className="text-xs text-slate-400">
-              수기 확정한 push→방송 매핑 기준 — 푸시를 오픈한 뒤(<b>발송시각 이후</b>) 해당 방송을 유효시청·구매한 유저를 세그먼트별로 집계합니다
+              수기 확정한 push→방송 매핑 기준 — 푸시를 오픈한 뒤(<b>발송시각 이후</b>) 해당 방송을 유효시청·구매한 유저를 세그먼트별로 집계해요
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -818,14 +818,14 @@ export default function PushResultsPage() {
             <span className="h-3 w-3 animate-ping rounded-full bg-indigo-500" />
             <div className="text-sm text-indigo-800">
               <b>{segJob?.stage ?? '시작 중…'}</b>
-              <span className="ml-2 text-indigo-500">수 분 소요 — 페이지를 떠나도 작업은 계속됩니다</span>
+              <span className="ml-2 text-indigo-500">수 분 소요 — 페이지를 떠나도 작업은 계속돼요</span>
             </div>
           </div>
         )}
 
         {segLoaded && !seg && !segRunning && (
           <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500">
-            아직 집계가 없습니다. <b>[집계 실행]</b>을 눌러 세그먼트별 전환율을 계산하세요.
+            아직 집계가 없어요. <b>[집계 실행]</b>을 눌러 세그먼트별 전환율을 계산하세요.
           </div>
         )}
 
