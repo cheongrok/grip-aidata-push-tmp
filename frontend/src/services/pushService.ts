@@ -3,6 +3,7 @@ import type {
   AbVerifyReq,
   AbVerifyRes,
   AllocationRes,
+  ClusterUserProfileRes,
   DiscoverRes,
   JobRes,
   MetaRes,
@@ -70,6 +71,15 @@ export async function getSnapshot(): Promise<SnapshotRes | null> {
 
 export async function startRefresh(nDay: number): Promise<JobRes> {
   return (await api.post('/api/v1/cluster-snapshot/refresh', { n_day: nDay })).data
+}
+
+export async function getClusterUserProfile(userSeq: number): Promise<ClusterUserProfileRes | null> {
+  try {
+    return (await api.get(`/api/v1/cluster-users/profile/${userSeq}`)).data
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 404) return null
+    throw e
+  }
 }
 
 export async function getJob(jobId: string): Promise<JobRes> {

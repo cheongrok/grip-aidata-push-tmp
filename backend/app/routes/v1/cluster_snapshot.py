@@ -13,7 +13,7 @@ def get_snapshot() -> SnapshotRes:
     """최신 유저 클러스터 스냅샷 (클러스터 카드 10개). 없으면 404."""
     res = snapshot.snapshot_response()
     if res is None:
-        raise HTTPException(404, "스냅샷 없음 — '유저 클러스터 최신화하기'를 먼저 실행하세요.")
+        raise HTTPException(404, "스냅샷 없음 — '유저 세그먼트 최신화하기'를 먼저 실행하세요.")
     return SnapshotRes(**res)
 
 

@@ -212,7 +212,7 @@ def refresh_snapshot(n_day: int = 180, progress: Callable[[str], None] = lambda 
     t0 = time.time()
     df = load_features_now(n_day, progress)
 
-    progress(f"{len(df):,}명 클러스터 배정 (k-prototypes)")
+    progress(f"{len(df):,}명 세그먼트 배정 (k-prototypes)")
     df["CLUSTER"] = predict_clusters(df)
 
     progress("저장")

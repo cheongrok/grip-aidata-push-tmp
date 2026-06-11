@@ -5,7 +5,7 @@ import PushResultsPage from './pages/PushResultsPage'
 
 const NAV = [
   { to: '/results', label: '푸시 현황', desc: '발송 결과 집계' },
-  { to: '/clusters', label: '유저 클러스터', desc: '최신화 & 프로필' },
+  { to: '/clusters', label: '유저 세그먼트', desc: '최신화 & 프로필' },
   { to: '/allocation', label: '푸시 분배', desc: '타겟 추출 & CSV' },
 ]
 

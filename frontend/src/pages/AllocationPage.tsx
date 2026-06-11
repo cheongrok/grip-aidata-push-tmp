@@ -67,19 +67,23 @@ export default function AllocationPage() {
 
   const snapshotMissing = meta != null && !meta.snapshot.exists
   const hasHoldout = result != null && result.per_push.some((p) => p.holdout_rows > 0)
+  // 스냅샷 기준일/경과일 — 분배 실행 전 최신화 점검(소프트). snapshot_at = "YYYY-MM-DD HH:MM:SS"
+  const snapAt = meta?.snapshot.snapshot_at ?? null
+  const snapAgeDays =
+    snapAt != null ? Math.floor((Date.now() - new Date(snapAt.replace(' ', 'T')).getTime()) / 86_400_000) : null
 
   return (
     <div className="space-y-6">
       <header>
         <h2 className="text-xl font-bold text-slate-800">푸시 분배</h2>
         <p className="text-sm text-slate-500">
-          카테고리·시간대를 입력하면 상위 클러스터부터 비교우위로 매칭해 푸시별 발송 대상 user_id CSV를 만듭니다
+          카테고리·시간대를 입력하면 상위 세그먼트부터 비교우위로 매칭해 푸시별 발송 대상 user_id CSV를 만듭니다
         </p>
       </header>
 
       {snapshotMissing && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          ⚠ 유저 클러스터 스냅샷이 없습니다 — <b>유저 클러스터</b> 페이지에서 먼저 최신화하세요.
+          ⚠ 유저 세그먼트 스냅샷이 없습니다 — <b>유저 세그먼트</b> 페이지에서 먼저 최신화하세요.
         </p>
       )}
       {meta?.snapshot.stale && (
@@ -177,6 +181,22 @@ export default function AllocationPage() {
           </div>
         ))}
 
+        {/* 분배 실행 전 스냅샷 최신화 점검 (소프트) — 결정 지점에 기준일·경과일 노출 */}
+        {meta?.snapshot.exists && snapAgeDays != null && (
+          <div
+            className={`rounded-lg border px-3 py-2 text-xs ${
+              snapAgeDays >= 1
+                ? 'border-red-200 bg-red-50 text-red-700'
+                : 'border-slate-200 bg-slate-50 text-slate-500'
+            }`}
+          >
+            {snapAgeDays >= 1 ? '⚠ ' : '📌 '}
+            유저 세그먼트 스냅샷 기준: <b>{snapAt?.slice(0, 10)}</b> ({snapAgeDays === 0 ? '오늘' : `${snapAgeDays}일 전`})
+            {snapAgeDays >= 1 &&
+              ' — 그 이후 새로 시청을 시작한 유저는 이 명단에 없습니다. 발송이라면 [유저 세그먼트] 탭에서 최신화했는지 확인하세요.'}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
           <button
             onClick={() =>
@@ -198,7 +218,7 @@ export default function AllocationPage() {
                   onChange={(e) => setTopK(+e.target.value)}
                   className="w-28"
                 />
-                <b className="w-20">{topK}개 클러스터</b>
+                <b className="w-20">{topK}개 세그먼트</b>
               </label>
             )}
             <label className="flex items-center gap-1.5 text-sm text-slate-600" title="발송 대상에서 무작위로 빼두는 대조군 비율 (방송 후 구매율 비교로 순효과 측정)">
@@ -237,7 +257,7 @@ export default function AllocationPage() {
             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
               기대 오픈·오픈율은 <b className="text-slate-700">발송 대비</b> 기준입니다 — 모델 CTR(도달 대비)에 도달률{' '}
               <b className="text-slate-700">{(result.delivery_rate * 100).toFixed(1)}%</b>를 반영했습니다 ({result.delivery_basis}).
-              <br />※ 도달률은 카테고리 간엔 균일하나 클러스터별 편차는 측정 불가(유저단위 발송 로그 없음)라 글로벌값을 일괄 적용 — 실효과는 무작위 A/B로 확인하세요.
+              <br />※ 도달률은 카테고리 간엔 균일하나 세그먼트별 편차는 측정 불가(유저단위 발송 로그 없음)라 글로벌값을 일괄 적용 — 실효과는 무작위 A/B로 확인하세요.
             </p>
           )}
           {hasHoldout && (
@@ -316,12 +336,12 @@ export default function AllocationPage() {
 
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div className="border-b border-slate-100 px-4 py-2 text-sm text-slate-500">
-              클러스터 → 푸시 배분 (스냅샷 {result.snapshot_at.slice(0, 16)} 기준 · run {result.run_id})
+              세그먼트 → 푸시 배분 (스냅샷 {result.snapshot_at.slice(0, 16)} 기준 · run {result.run_id})
             </div>
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium">클러스터</th>
+                  <th className="px-3 py-2 text-left font-medium">세그먼트</th>
                   <th className="px-3 py-2 text-right font-medium">인원</th>
                   {result.per_push.map((pp, j) => (
                     <th key={j} className="px-3 py-2 text-right font-medium">

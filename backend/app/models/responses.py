@@ -214,6 +214,28 @@ class SegmentPushRow(BaseModel):
     clusters: list[SegmentClusterStats]
 
 
+# 최근 방송 종합 — 세그먼트별 오픈자 vs 비오픈자 비교 (발송 모수 내) — 시청·구매율
+class OpenCompareRow(BaseModel):
+    cluster: int                             # 모델 원본 라벨 (-1=미배정)
+    rank: int | None = None                  # 표시 번호 (S1~S10). 미배정은 None
+    short_name: str = ""                     # 짧은 별칭 (예: "VIP 코어")
+    n_sent: int = 0                          # 발송(누적, 최근 N방송 합산)
+    n_open: int = 0                          # 그중 오픈
+    open_rate_pct: float = 0.0               # 오픈/발송
+    opener_view_rate_pct: float = 0.0        # 오픈자 유효시청률
+    opener_purchase_rate_pct: float = 0.0    # 오픈자 구매전환율
+    nonopener_view_rate_pct: float = 0.0     # 비오픈자(발송됐으나 미오픈) 유효시청률
+    nonopener_purchase_rate_pct: float = 0.0 # 비오픈자 구매전환율
+
+
+class ClusterUserSampleRow(BaseModel):
+    user_seq: int
+    user_id: str
+    user_name: str = ""
+    grade: int            # member_grade.grade (무등급=10), 높을수록 상위
+    gender: str = ""      # M/F/X/""
+
+
 class SegmentConversionRes(BaseModel):
     computed_at: str
     cluster_snapshot_at: str
@@ -224,6 +246,29 @@ class SegmentConversionRes(BaseModel):
     totals: SegmentStats
     by_cluster_total: list[SegmentClusterStats]
     pushes: list[SegmentPushRow]
+    open_compare: list[OpenCompareRow] = []  # 최근 방송 종합 세그먼트별 오픈/비오픈 비교 (기본 [], 옛 캐시 호환)
+    open_compare_n_pushes: int = 0           # open_compare 에 합산된 최근 방송 수
+    cluster_user_samples: dict[str, list[ClusterUserSampleRow]] = {}  # 원본 cluster id "0".."9" → 오픈자 샘플(등급순)
+
+
+# ── 클러스터 내 유저 샘플 분석 (선택 유저 프로필) ──
+class WatchedBroadcast(BaseModel):
+    seller: str = ""
+    title: str = ""
+    watch_min: float
+
+
+class ClusterUserProfileRes(BaseModel):
+    user_seq: int
+    user_id: str
+    user_name: str = ""
+    grade: int
+    gender: str | None = None     # M/F/X/None
+    age: int | None = None        # BIRTH 연도 기반, NULL/파싱실패 시 None
+    total_spend: int              # 최근 90일 SUM(gmv WHERE cancel_at IS NULL AND gmv>0)
+    purchase_count: int           # 최근 90일 COUNT(DISTINCT order_seq)
+    aov: int                      # 총지출 / 구매횟수
+    top_broadcasts: list[WatchedBroadcast] = []  # 최근 90일 시청시간 상위 방송
 
 
 # ── 푸시알림 효과검증 (A/B 홀드아웃) ──

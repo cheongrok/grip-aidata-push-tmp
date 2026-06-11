@@ -225,10 +225,95 @@ def _reach_sql(push_seqs: list[int], min_pa: str) -> str:
     """
 
 
+def _open_compare_sql(seqs: list[int], pmap: dict[int, list[int]], push_at: dict[int, str], min_pa: str) -> str:
+    """발송 모수(send_status=Y·token_valid=Y) 안에서 오픈 vs 비오픈의 매핑방송 유효시청·구매를 (push_seq, opened) 집계."""
+    pushes_vals = ", ".join(f"({s}, TIMESTAMP '{push_at[s]}')" for s in seqs)
+    pmap_vals = ", ".join(f"({s}, {cs})" for s in seqs for cs in pmap[s])
+    cs_list = ", ".join(str(cs) for s in seqs for cs in pmap[s])
+    inlist = ", ".join(str(s) for s in seqs)
+    return f"""
+    WITH pushes AS (SELECT * FROM (VALUES {pushes_vals}) p(push_seq, push_at)),
+    pmap AS (SELECT * FROM (VALUES {pmap_vals}) m(push_seq, content_seq)),
+    sent AS (SELECT push_seq, user_seq FROM data_anal.push_send_history
+             WHERE send_status='Y' AND token_valid='Y' AND push_seq IN ({inlist}) GROUP BY 1, 2),
+    opened AS (SELECT p.push_seq, e.login_user_seq AS user_seq FROM default.events_all e
+               JOIN pushes p ON e.notification_label = 'push-' || p.push_seq AND e.timestamp >= p.push_at
+               WHERE e.event_name='notification_open' AND e.login_user_seq IS NOT NULL
+                 AND e.timestamp >= TIMESTAMP '{min_pa}' GROUP BY 1, 2),
+    esw AS (SELECT es.userseq AS user_seq, es.contentseq AS content_seq, es."@timestamp" AS ts
+            FROM default.elasticsearch es
+            WHERE es.contentseq IN ({cs_list}) AND es.viewtimemillis >= 10000 AND es."@timestamp" >= TIMESTAMP '{min_pa}'),
+    watch AS (SELECT DISTINCT s.push_seq, s.user_seq FROM sent s
+              JOIN pmap pm ON pm.push_seq = s.push_seq JOIN pushes p ON p.push_seq = s.push_seq
+              JOIN esw w ON w.user_seq = s.user_seq AND w.content_seq = pm.content_seq AND w.ts >= p.push_at),
+    ob AS (SELECT user_seq, content_seq, ordered_at AS ts FROM default.order_all
+           WHERE content_seq IN ({cs_list}) AND cancel_at IS NULL AND gmv > 0 AND ordered_at >= TIMESTAMP '{min_pa}'),
+    buy AS (SELECT DISTINCT s.push_seq, s.user_seq FROM sent s
+            JOIN pmap pm ON pm.push_seq = s.push_seq JOIN pushes p ON p.push_seq = s.push_seq
+            JOIN ob b ON b.user_seq = s.user_seq AND b.content_seq = pm.content_seq AND b.ts >= p.push_at),
+    base AS (SELECT s.push_seq, s.user_seq,
+               IFF(o.user_seq IS NOT NULL, 1, 0) AS opened,
+               IFF(w.user_seq IS NOT NULL, 1, 0) AS watched,
+               IFF(b.user_seq IS NOT NULL, 1, 0) AS bought
+             FROM sent s
+             LEFT JOIN opened o ON o.push_seq = s.push_seq AND o.user_seq = s.user_seq
+             LEFT JOIN watch w ON w.push_seq = s.push_seq AND w.user_seq = s.user_seq
+             LEFT JOIN buy b ON b.push_seq = s.push_seq AND b.user_seq = s.user_seq)
+    SELECT push_seq, user_seq, opened, watched, bought FROM base
+    """
+
+
+def _open_compare_by_segment(
+    seqs: list[int], pmap: dict[int, list[int]], push_at: dict[int, str], min_pa: str,
+    cmap: pd.Series, k: int,
+) -> list[dict]:
+    """최근 방송(seqs) 종합 — 발송 모수 내 오픈 vs 비오픈을 세그먼트(클러스터)별로 집계.
+
+    같은 활성도(클러스터) 안에서 비교해 선택편향을 '일부' 통제(완전 인과는 A/B).
+    유저 단위 (push_seq, user_seq, opened, watched, bought)를 받아 클러스터 매핑 후 풀링.
+    한 유저가 최근 10방송 중 여러 개 받았으면 발송 건마다 1행(각 발송 기회 기준).
+    """
+    if not seqs:
+        return []
+    df = run_query(_open_compare_sql(seqs, pmap, push_at, min_pa))
+    df.columns = df.columns.str.lower()
+    if not len(df):
+        return []
+    df["cluster"] = df["user_seq"].astype("int64").map(cmap).fillna(UNASSIGNED).astype(int)
+    for col in ("opened", "watched", "bought"):
+        df[col] = df[col].astype(int)
+    agg = df.groupby(["cluster", "opened"]).agg(
+        n=("user_seq", "size"), nw=("watched", "sum"), nb=("bought", "sum")
+    )
+    rank_of = artifacts.load()["RANK"]
+    rows = []
+    for cid in list(range(k)) + [UNASSIGNED]:
+        o = agg.loc[(cid, 1)] if (cid, 1) in agg.index else None
+        no = agg.loc[(cid, 0)] if (cid, 0) in agg.index else None
+        on = int(o["n"]) if o is not None else 0
+        nn = int(no["n"]) if no is not None else 0
+        rows.append(
+            {
+                "cluster": int(cid),
+                "rank": rank_of.get(int(cid)),
+                "short_name": SHORT_NAME.get(int(cid), ""),
+                "n_sent": on + nn,
+                "n_open": on,
+                "open_rate_pct": round(on / (on + nn) * 100, 2) if (on + nn) else 0.0,
+                "opener_view_rate_pct": _rate(int(o["nw"]) if o is not None else 0, on),
+                "opener_purchase_rate_pct": _rate(int(o["nb"]) if o is not None else 0, on),
+                "nonopener_view_rate_pct": _rate(int(no["nw"]) if no is not None else 0, nn),
+                "nonopener_purchase_rate_pct": _rate(int(no["nb"]) if no is not None else 0, nn),
+            }
+        )
+    rows.sort(key=lambda r: (r["rank"] is None, r["rank"] or 0))  # S1..S10, 미배정 마지막
+    return rows
+
+
 def _load_clusters() -> pd.Series:
     """latest_cluster.csv → USER_SEQ(int) → CLUSTER(int) Series (대용량 매핑 효율 위해 int 인덱스)."""
     if not LATEST_CLUSTER_CSV.exists():
-        raise SnapshotMissingError("클러스터 스냅샷 없음 — 유저 클러스터 최신화 먼저")
+        raise SnapshotMissingError("세그먼트 스냅샷 없음 — 유저 세그먼트 최신화 먼저")
     cl = pd.read_csv(LATEST_CLUSTER_CSV, usecols=["USER_SEQ", "CLUSTER"])
     return pd.Series(cl["CLUSTER"].astype(int).values, index=cl["USER_SEQ"].astype("int64"))
 
@@ -289,6 +374,64 @@ def _by_cluster_for_push(grp: pd.Series, pseq: int) -> pd.Series:
     return pd.Series(dtype="int64")
 
 
+CLUSTER_SAMPLE_CAP = 300  # 클러스터당 샘플 상한 (등급 내림차순 상위 N)
+
+
+def _cluster_user_sample_sql(inlist: str) -> str:
+    """오픈자 user_seq IN-list → 일반회원(운영자 type5·탈퇴 status3 제외)의 id/이름/등급/성별."""
+    return f"""
+    SELECT m.user_seq, TO_VARCHAR(m.user_id) AS user_id, m.user_name,
+           COALESCE(g.grade, 10) AS grade, m.gender
+    FROM   grip_db.member m
+    LEFT JOIN grip_db_realtime.member_grade g ON g.user_seq = m.user_seq
+    WHERE  m.user_seq IN ({inlist}) AND m.user_type <> 5 AND m.user_status <> 3
+    """
+
+
+def _build_cluster_user_samples(rl: pd.DataFrame, cmap: pd.Series) -> dict:
+    """오픈자(rl)를 클러스터별 등급 내림차순 상위 N 샘플로 (운영자 type5 제외). 키=원본 cluster id "0".."9".
+
+    rl 은 이미 만들어진 오픈자×클러스터라 events_all 재스캔 없음 — 그 user_seq 만 member 에 조인.
+    오픈자 수가 많을 수 있어 IN-list 를 5000씩 청크해 조회한 뒤, 클러스터별로 등급 내림차순 상위 N 추출.
+    """
+    if not len(rl):
+        return {}
+    distinct = rl.drop_duplicates("user_seq")[["user_seq", "cluster"]].copy()
+    distinct = distinct[distinct["cluster"] != UNASSIGNED]  # 미배정 제외 (S1~S10만)
+    if not len(distinct):
+        return {}
+    seqs = distinct["user_seq"].astype("int64").tolist()
+    frames = []
+    for i in range(0, len(seqs), 5000):
+        inlist = ", ".join(str(s) for s in seqs[i : i + 5000])
+        d = run_query(_cluster_user_sample_sql(inlist))
+        d.columns = d.columns.str.lower()
+        if len(d):
+            frames.append(d)
+    if not frames:
+        return {}
+    mb = pd.concat(frames, ignore_index=True)
+    mb["user_seq"] = mb["user_seq"].astype("int64")
+    mb["grade"] = pd.to_numeric(mb["grade"], errors="coerce").fillna(10).astype(int)
+    cl = distinct.set_index("user_seq")["cluster"]
+    mb["cluster"] = mb["user_seq"].map(cl)
+    mb = mb[mb["cluster"].notna()]
+    out: dict[str, list[dict]] = {}
+    for cid, g in mb.groupby("cluster"):
+        g = g.sort_values(["grade", "user_seq"], ascending=[False, True]).head(CLUSTER_SAMPLE_CAP)
+        out[str(int(cid))] = [
+            {
+                "user_seq": int(r.user_seq),
+                "user_id": str(r.user_id),
+                "user_name": str(r.user_name) if pd.notna(r.user_name) else "",
+                "grade": int(r.grade),
+                "gender": str(r.gender) if pd.notna(r.gender) else "",
+            }
+            for r in g.itertuples(index=False)
+        ]
+    return out
+
+
 def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None) -> dict:
     """세그먼트별 전환·커버리지 집계 job 본체 (수기 매핑 기반). jobs.start_exclusive 로 실행."""
     desc = artifacts.load()["DESC"]
@@ -300,7 +443,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
         raise ManualMapMissingError("수기 매핑이 비어 있습니다.")
     push_seqs = sorted(manual)
 
-    progress("클러스터 스냅샷 로드")
+    progress("세그먼트 스냅샷 로드")
     cmap = _load_clusters()  # USER_SEQ(int) → CLUSTER. 없으면 SnapshotMissingError
     snapshot_at = _snapshot_at()
 
@@ -337,7 +480,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
     reach_df = run_query(_reach_sql(push_seqs, min_pa))
     reach_df.columns = reach_df.columns.str.lower()
 
-    progress("클러스터 매핑/집계")
+    progress("세그먼트 매핑/집계")
 
     def _to_cluster(s: pd.Series) -> pd.Series:
         return s.astype("int64").map(cmap).fillna(UNASSIGNED).astype(int)
@@ -393,6 +536,14 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
             }
         )
 
+    # ── 최근 방송 오픈/비오픈 비교 (발송 모수 내, 최근 10개 종합 → 세그먼트별) ──
+    progress("최근 방송 오픈/비오픈 세그먼트별 비교 (Snowflake)")
+    recent = [s for s in sorted(push_at, key=lambda s: push_at[s], reverse=True) if s in pmap][:10]
+    try:
+        open_compare = _open_compare_by_segment(recent, pmap, push_at, min_pa, cmap, k)
+    except Exception:  # 보조 지표 — 실패해도 본 집계는 살린다
+        open_compare = []
+
     # ── 전체 totals / by_cluster_total (푸시 합산 — 같은 유저가 여러 푸시면 중복 계수) ──
     totals = _stats(
         len(rl),
@@ -403,6 +554,9 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
         float(rl["gmv"].sum()) if len(rl) else 0.0,
     )
     by_cluster_total = _cluster_block(rl, desc, k, sent_total, reach_total)
+
+    progress("클러스터별 오픈 유저 샘플 (member 보강)")
+    cluster_user_samples = _build_cluster_user_samples(rl, cmap)
 
     dates = sorted(v[:10] for v in push_at.values())
     period_start, period_end = (dates[0], dates[-1]) if dates else ("", "")
@@ -417,6 +571,9 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
         "totals": totals,
         "by_cluster_total": by_cluster_total,
         "pushes": pushes_out,
+        "open_compare": open_compare,
+        "open_compare_n_pushes": len(recent),
+        "cluster_user_samples": cluster_user_samples,  # {원본 cluster id "0".."9": [오픈자 샘플]}
     }
 
     progress("저장")
@@ -447,4 +604,5 @@ def read_segment_conversion() -> dict | None:
     payload["by_cluster_total"] = _rank_and_sort(payload["by_cluster_total"])
     for p in payload["pushes"]:
         p["clusters"] = _rank_and_sort(p["clusters"])
+    payload.setdefault("cluster_user_samples", {})  # 구 캐시 호환
     return payload
