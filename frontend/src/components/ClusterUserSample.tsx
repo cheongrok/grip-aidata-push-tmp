@@ -5,6 +5,12 @@ import type { ClusterUserProfileRes, ClusterUserSampleRow, SegmentConversionRes 
 const GENDER_LABEL: Record<string, string> = { M: '남', F: '여' }
 const genderText = (g: string | null | undefined) => (g ? (GENDER_LABEL[g] ?? '기타') : '미상')
 
+// 누적 시청 초 → "X분 Y초" (분만 표시하면 30초 미만이 전부 0분이라 초까지 표기)
+const watchText = (sec: number) => {
+  const s = Math.max(0, Math.round(sec))
+  return `${Math.floor(s / 60)}분 ${s % 60}초`
+}
+
 export default function ClusterUserSample({ seg }: { seg: SegmentConversionRes }) {
   const [selected, setSelected] = useState<ClusterUserSampleRow | null>(null)
   const [profile, setProfile] = useState<ClusterUserProfileRes | null>(null)
@@ -96,7 +102,7 @@ export default function ClusterUserSample({ seg }: { seg: SegmentConversionRes }
                       📺 <b className="text-slate-700">{b.seller || '-'}</b>
                       <span className="ml-1 text-slate-400">{b.title || '-'}</span>
                     </span>
-                    <span className="shrink-0 tabular-nums text-slate-500">{b.watch_min.toFixed(0)}분</span>
+                    <span className="shrink-0 tabular-nums text-slate-500">{watchText(b.watch_sec)}</span>
                   </li>
                 ))}
               </ul>

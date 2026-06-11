@@ -255,7 +255,7 @@ class SegmentConversionRes(BaseModel):
 class WatchedBroadcast(BaseModel):
     seller: str = ""
     title: str = ""
-    watch_min: float
+    watch_sec: int               # 최근 90일 누적 시청 초 (프론트에서 분·초로 표시)
 
 
 class ClusterUserProfileRes(BaseModel):

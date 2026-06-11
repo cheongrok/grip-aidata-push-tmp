@@ -70,7 +70,7 @@ def fetch_user_profile(user_seq: int) -> dict | None:
               AND  es."@timestamp" >= DATEADD(day, -{WINDOW_DAYS}, CURRENT_TIMESTAMP)
             GROUP BY es.contentseq
         )
-        SELECT ct.title AS title, mb.user_name AS seller, w.ms / 60000.0 AS watch_min
+        SELECT ct.title AS title, mb.user_name AS seller, w.ms / 1000.0 AS watch_sec
         FROM   w
         JOIN   grip_db_realtime.content ct ON ct.content_seq = w.content_seq
         LEFT JOIN grip_db_realtime.member mb ON mb.user_seq = ct.user_seq
@@ -84,7 +84,7 @@ def fetch_user_profile(user_seq: int) -> dict | None:
         {
             "seller": str(x.seller) if pd.notna(x.seller) else "",
             "title": str(x.title) if pd.notna(x.title) else "",
-            "watch_min": round(float(x.watch_min), 1),
+            "watch_sec": int(round(float(x.watch_sec))),  # 총 시청 초 (분·초 표시는 프론트에서)
         }
         for x in watch.itertuples(index=False)
     ]

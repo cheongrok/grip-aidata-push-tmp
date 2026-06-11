@@ -215,7 +215,7 @@ export interface ClusterUserSampleRow {
 export interface WatchedBroadcast {
   seller: string
   title: string
-  watch_min: number
+  watch_sec: number // 최근 90일 누적 시청 초
 }
 
 export interface ClusterUserProfileRes {
