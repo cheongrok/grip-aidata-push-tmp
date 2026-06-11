@@ -20,16 +20,16 @@ def create(req: AllocationReq) -> AllocationRes:
     if not req.pushes:
         raise HTTPException(422, "푸시를 1개 이상 입력하세요.")
     if req.volumes is not None and (len(req.volumes) != len(req.pushes) or abs(sum(req.volumes) - 1) > 1e-9):
-        raise HTTPException(422, "volumes 는 푸시 수와 같고 합이 1이어야 합니다.")
+        raise HTTPException(422, "volumes 는 푸시 수와 같고 합이 1이어야 해요.")
     has = [bool(p.clusters) for p in req.pushes]
     if any(has) and not all(has):
         raise HTTPException(422, "수동 타겟 모드: 모든 푸시에 세그먼트를 선택하거나, 전부 비워 자동 모드로 두세요.")
     if any(has) and req.volumes is not None:
-        raise HTTPException(422, "수동 타겟 모드에서는 volumes 를 쓸 수 없습니다 (세그먼트 선택으로 분배가 정해집니다).")
+        raise HTTPException(422, "수동 타겟 모드에서는 volumes 를 쓸 수 없어요 (세그먼트 선택으로 분배가 정해져요).")
     valid = set(artifacts.load()["MAY_ORDER"])
     for p in req.pushes:
         if p.clusters and not set(p.clusters) <= valid:
-            raise HTTPException(422, f"유효하지 않은 세그먼트 id 가 있습니다 (허용: {sorted(valid)}).")
+            raise HTTPException(422, f"유효하지 않은 세그먼트 id 가 있어요 (허용: {sorted(valid)}).")
     try:
         res = allocation_svc.create_allocation(
             [p.model_dump() for p in req.pushes], top_k=req.top_k, volumes=req.volumes,

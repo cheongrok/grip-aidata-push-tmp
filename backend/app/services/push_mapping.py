@@ -41,7 +41,7 @@ def discover_content(push_seq: int, user_name: str) -> dict:
     meta = run_query(f"SELECT push_seq, push_at, title FROM grip_db.push WHERE push_seq = {push_seq}")
     meta.columns = meta.columns.str.lower()
     if not len(meta):
-        out["warnings"].append(f"push_seq {push_seq} 가 존재하지 않습니다.")
+        out["warnings"].append(f"push_seq {push_seq} 가 존재하지 않아요.")
         return out
     r = meta.iloc[0]
     sched_at = pd.Timestamp(r["push_at"]).strftime("%Y-%m-%d %H:%M:%S") if pd.notna(r["push_at"]) else None
@@ -62,7 +62,7 @@ def discover_content(push_seq: int, user_name: str) -> dict:
     out["n_sent"] = int(snd.iloc[0]["n"]) if len(snd) and pd.notna(snd.iloc[0]["n"]) else 0
     out["push_at"] = sent_at or sched_at  # 발송시각(최종 집계 동일) 우선, 없으면 예약시각
     if out["n_sent"] == 0:
-        out["warnings"].append("이 push_seq 의 발송 기록(send_status=Y)이 없습니다 — 발송된 푸시인지 확인하세요.")
+        out["warnings"].append("이 push_seq 의 발송 기록(send_status=Y)이 없어요 — 발송된 푸시인지 확인하세요.")
 
     # 2) 판매자 매칭 (정확 일치 · 파라미터 바인딩으로 SQL 주입/리터럴 깨짐 차단)
     mem = run_query(
@@ -72,14 +72,14 @@ def discover_content(push_seq: int, user_name: str) -> dict:
     mem.columns = mem.columns.str.lower()
     out["seller_matches"] = len(mem)
     if not len(mem):
-        out["warnings"].append("판매자이름과 정확히 일치하는 회원이 없습니다 — 띄어쓰기·표기(대소문자·이모지)를 확인하세요.")
+        out["warnings"].append("판매자이름과 정확히 일치하는 회원이 없어요 — 띄어쓰기·표기(대소문자·이모지)를 확인하세요.")
         return out
     if len(mem) > 1:
-        out["warnings"].append(f"판매자이름이 {len(mem)}명과 일치합니다(동명이인 가능) — 발견된 방송이 맞는지 확인하세요.")
+        out["warnings"].append(f"판매자이름이 {len(mem)}명과 일치해요(동명이인 가능) — 발견된 방송이 맞는지 확인하세요.")
 
     # 3) 방송 발견 (발송시각 전후 [-2h, +3h), 실제 방영분만 view_count/duration > 0)
     if not out["push_at"]:
-        out["warnings"].append("푸시 발송시각이 없어 방송을 찾을 수 없습니다.")
+        out["warnings"].append("푸시 발송시각이 없어 방송을 찾을 수 없어요.")
         return out
     user_seqs = ", ".join(str(int(s)) for s in mem["user_seq"])
     c = run_query(f"""
@@ -104,7 +104,7 @@ def discover_content(push_seq: int, user_name: str) -> dict:
     ]
     if not out["contents"]:
         out["warnings"].append(
-            "발송 전후(−2h~+3h)에 이 판매자의 방송을 찾지 못했습니다 — 판매자이름/푸시를 확인하세요(사전예고·VOD 푸시는 수동 매핑 필요)."
+            "발송 전후(−2h~+3h)에 이 판매자의 방송을 찾지 못했어요 — 판매자이름/푸시를 확인하세요(사전예고·VOD 푸시는 수동 매핑 필요)."
         )
         return out
 

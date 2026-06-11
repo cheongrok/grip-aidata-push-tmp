@@ -85,7 +85,7 @@ export default function ClusterSnapshotPage() {
         <div>
           <h2 className="text-xl font-bold text-slate-800">유저 세그먼트</h2>
           <p className="text-sm text-slate-500">
-            발송가능 전체 모수(마케팅 기준)를 현재 시점 행동 피처로 10개 세그먼트에 배정합니다
+            발송가능 전체 모수(마케팅 기준)를 현재 시점 행동 피처로 10개 세그먼트에 배정해요
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -121,14 +121,14 @@ export default function ClusterSnapshotPage() {
           <span className="h-3 w-3 animate-ping rounded-full bg-indigo-500" />
           <div className="text-sm text-indigo-800">
             <b>{job?.stage ?? '시작 중…'}</b>
-            <span className="ml-2 text-indigo-500">Snowflake 적재 포함 5~15분 — 페이지를 떠나도 작업은 계속됩니다</span>
+            <span className="ml-2 text-indigo-500">Snowflake 적재 포함 5~15분 — 페이지를 떠나도 작업은 계속돼요</span>
           </div>
         </div>
       )}
 
       {loaded && !snap && !running && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          아직 스냅샷이 없습니다. <b>[유저 세그먼트 최신화하기]</b>를 눌러 첫 스냅샷을 만드세요.
+          아직 스냅샷이 없어요. <b>[유저 세그먼트 최신화하기]</b>를 눌러 첫 스냅샷을 만드세요.
           <p className="mt-1 text-xs">회당 Snowflake 5~15분 소요 · 푸시 발송 전 갱신 권장</p>
         </div>
       )}
@@ -244,7 +244,7 @@ export default function ClusterSnapshotPage() {
 
             {seg && seg.cluster_snapshot_at.slice(0, 16) < snap.snapshot_at.slice(0, 16) && (
               <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-                ⚠ 이 차트는 이전 세그먼트 스냅샷({seg.cluster_snapshot_at.slice(0, 16)}) 기준입니다. 현재
+                ⚠ 이 차트는 이전 세그먼트 스냅샷({seg.cluster_snapshot_at.slice(0, 16)}) 기준이에요. 현재
                 스냅샷({snap.snapshot_at.slice(0, 16)})에 맞추려면 <b>[집계 갱신]</b>을 누르세요.
               </p>
             )}
@@ -254,7 +254,7 @@ export default function ClusterSnapshotPage() {
             ) : (
               !segRunning && (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                  아직 전환 집계가 없습니다. <b>[집계 실행]</b>을 눌러 계산하세요 (수 분 소요).
+                  아직 전환 집계가 없어요. <b>[집계 실행]</b>을 눌러 계산하세요 (수 분 소요).
                 </div>
               )
             )}
@@ -271,7 +271,7 @@ export default function ClusterSnapshotPage() {
               <ClusterUserSample seg={seg} />
             ) : (
               <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
-                위 <b>[집계 실행]</b>을 누르면 세그먼트별 오픈 유저 샘플이 함께 생성됩니다.
+                위 <b>[집계 실행]</b>을 누르면 세그먼트별 오픈 유저 샘플이 함께 생성돼요.
               </div>
             )}
           </section>

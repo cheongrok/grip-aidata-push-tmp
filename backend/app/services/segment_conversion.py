@@ -440,7 +440,7 @@ def compute_segment_conversion(progress: Callable[[str], None] = lambda s: None)
     progress("수기 매핑 로드")
     manual = _load_manual_map()  # {push_seq: {"content_ids": [...], "category": str|None}}
     if not manual:
-        raise ManualMapMissingError("수기 매핑이 비어 있습니다.")
+        raise ManualMapMissingError("수기 매핑이 비어 있어요.")
     push_seqs = sorted(manual)
 
     progress("세그먼트 스냅샷 로드")

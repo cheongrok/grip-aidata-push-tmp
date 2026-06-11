@@ -76,7 +76,7 @@ export default function SegmentShareChart({
   const totPur = overall?.n_purchase ?? 0
 
   if (!overall || totOpen === 0) {
-    return <p className="py-6 text-center text-sm text-slate-400">집계 데이터가 없습니다.</p>
+    return <p className="py-6 text-center text-sm text-slate-400">집계 데이터가 없어요.</p>
   }
 
   // clusters 는 백엔드에서 이미 rank 순(미배정 마지막). 그대로 슬라이스로.
@@ -117,11 +117,11 @@ export default function SegmentShareChart({
       {crossover && (
         <p className="mt-3 text-center text-xs text-slate-500">
           상위 <b className="text-indigo-600">{crossover.k}개 세그먼트</b>가 오픈의{' '}
-          <b>{crossover.open.toFixed(0)}%</b>에서 구매의 <b className="text-indigo-600">{crossover.pur.toFixed(0)}%</b>를 만든다.
+          <b>{crossover.open.toFixed(0)}%</b>에서 구매의 <b className="text-indigo-600">{crossover.pur.toFixed(0)}%</b>를 만들어요.
         </p>
       )}
       {singlePush && (
-        <p className="mt-1 text-center text-[11px] text-amber-600">⚠ 단건 푸시 — 표본이 작아 점유 비율 노이즈가 큽니다.</p>
+        <p className="mt-1 text-center text-[11px] text-amber-600">⚠ 단건 푸시 — 표본이 작아 점유 비율 노이즈가 커요.</p>
       )}
     </div>
   )
